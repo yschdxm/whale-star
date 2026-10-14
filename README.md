@@ -6,6 +6,8 @@
 
 ![star 大肥鱼](https://whale-star.whale-star.workers.dev/?repo=yschdxm/whale-star)
 
+**在线介绍页（含生成器与套装列表）**：https://whale-star.whale-star.workers.dev/
+
 ## 接入
 
 在你的 README.md 里加一行：
@@ -22,80 +24,13 @@
 - star 数与图片缓存约 5 分钟，跨档后通常 10 分钟内生效。
 - 调试可用响应头 `X-Star-Count` / `X-Star-Tier` 查看当前星数与档位。
 
-## 档位一览
+## 可用套装
 
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <a href="https://whale-star.whale-star.workers.dev/packs/default/t0.webp">
-        <img src="https://whale-star.whale-star.workers.dev/packs/default/t0.webp" width="400" alt="T0 · 0 star" />
-      </a>
-      <br /><b>T0</b> · 0 star — 呜…一颗星都没有
-    </td>
-    <td align="center" width="50%">
-      <a href="https://whale-star.whale-star.workers.dev/packs/default/t1.webp">
-        <img src="https://whale-star.whale-star.workers.dev/packs/default/t1.webp" width="400" alt="T1 · 1–9 star" />
-      </a>
-      <br /><b>T1</b> · 1–9 — 有一颗了！谢谢你！
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <a href="https://whale-star.whale-star.workers.dev/packs/default/t2.webp">
-        <img src="https://whale-star.whale-star.workers.dev/packs/default/t2.webp" width="400" alt="T2 · 10–49 star" />
-      </a>
-      <br /><b>T2</b> · 10–49 — 十几颗啦，本鱼开心
-    </td>
-    <td align="center">
-      <a href="https://whale-star.whale-star.workers.dev/packs/default/t3.webp">
-        <img src="https://whale-star.whale-star.workers.dev/packs/default/t3.webp" width="400" alt="T3 · 50–199 star" />
-      </a>
-      <br /><b>T3</b> · 50–199 — 冒尖了！还要还要～
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <a href="https://whale-star.whale-star.workers.dev/packs/default/t4.webp">
-        <img src="https://whale-star.whale-star.workers.dev/packs/default/t4.webp" width="400" alt="T4 · 200–499 star" />
-      </a>
-      <br /><b>T4</b> · 200–499 — 盆要装不下啦！
-    </td>
-    <td align="center">
-      <a href="https://whale-star.whale-star.workers.dev/packs/default/t5.webp">
-        <img src="https://whale-star.whale-star.workers.dev/packs/default/t5.webp" width="400" alt="T5 · 500–999 star" />
-      </a>
-      <br /><b>T5</b> · 500–999 — 堆到脚踝咯，嘿嘿
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <a href="https://whale-star.whale-star.workers.dev/packs/default/t6.webp">
-        <img src="https://whale-star.whale-star.workers.dev/packs/default/t6.webp" width="400" alt="T6 · 1k–2.9k star" />
-      </a>
-      <br /><b>T6</b> · 1k–2.9k — 已经埋到腰啦！
-    </td>
-    <td align="center">
-      <a href="https://whale-star.whale-star.workers.dev/packs/default/t7.webp">
-        <img src="https://whale-star.whale-star.workers.dev/packs/default/t7.webp" width="400" alt="T7 · 3k–9.9k star" />
-      </a>
-      <br /><b>T7</b> · 3k–9.9k — 天上也下星星了！
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <a href="https://whale-star.whale-star.workers.dev/packs/default/t8.webp">
-        <img src="https://whale-star.whale-star.workers.dev/packs/default/t8.webp" width="400" alt="T8 · 10k–49.9k star" />
-      </a>
-      <br /><b>T8</b> · 10k–49.9k — 本鱼在星海游泳～
-    </td>
-    <td align="center">
-      <a href="https://whale-star.whale-star.workers.dev/packs/default/t9.webp">
-        <img src="https://whale-star.whale-star.workers.dev/packs/default/t9.webp" width="400" alt="T9 · 50k+ star" />
-      </a>
-      <br /><b>T9</b> · 50k+ — 传说级大肥鱼！
-    </td>
-  </tr>
-</table>
+| 套装 | 路径 |
+|---|---|
+| [蓝色大肥鱼 · 默认套装](https://whale-star.whale-star.workers.dev/?pack=default) | `https://whale-star.whale-star.workers.dev/?pack=default` |
+
+以上列表同步自 `assets/packs/index.json`，新套装上线后会出现在这里与介绍页下拉菜单中。
 
 ## 提交自定义套装
 
