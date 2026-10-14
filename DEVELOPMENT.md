@@ -57,9 +57,9 @@ token 可用本地 `gh auth token` 的输出，或 GitHub 上建一个无权限�
 
 两种途径：
 
-**A. 用户途径（推荐）**：Issue 模板提交 → 机器人校验 → 维护者打 `pack:approved` 标签 → 自动合入并部署（见下文「套装投稿流水线」）。
+**A. 用户途径（推荐）**：Fork → 改 `assets/packs/<id>/` → 提 PR（见 [CONTRIBUTING.md](./CONTRIBUTING.md)）。
 
-**B. 手动途径**：
+**B. 直接提交**（维护者）：
 
 1. 在 `assets/packs/<pack-id>/` 放入 `pack.json` 与各档图片（建议 WebP，长边 1536，单图 ≤1.5MB）；
 2. `pack.json` 结构参考 `default`：
@@ -83,14 +83,18 @@ token 可用本地 `gh auth token` 的输出，或 GitHub 上建一个无权限�
 
 Worker 按需从静态资产读取 `/packs/<id>/pack.json`（进程内缓存 5 分钟），无需改代码注册。
 
-## 套装投稿流水线
+## 套装投稿流水线（PR 流程）
 
 | 阶段 | 触发 | 动作 |
 |---|---|---|
-| 格式校验 | Issue opened/edited/reopened，标题含 `[pack]` | `pack-review.yml`：解析表单 → 下载 zip → `scripts/validate-pack.mjs` 校验。失败打 `pack:format-error` 并评论问题清单；通过打 `pack:format-ok` 通知等待审核 |
-| 批准发布 | 维护者打 `pack:approved` 标签 | `pack-approve.yml`：重新校验 → 拷入 `assets/packs/<id>/` → 更新 `index.json` → commit/push → `wrangler deploy` → 评论成功并打 `pack:published` |
+| 格式校验 | PR opened/synchronize，路径含 `assets/packs/**` | `pack-pr.yml`：对仓库内**全部**套装跑 `scripts/validate-pack.mjs <dir> <id> assets/packs/index.json`（结构、图片、index 一致性）；失败在 PR 上评论修复指引 |
+| 发布 | PR 被合并 | `pack-merge.yml`：重新校验 → `npm ci && npx wrangler deploy` → 评论上线成功 |
 
-标签：`pack:submission`（模板自动）、`pack:format-ok`、`pack:format-error`、`pack:approved`（人工，发布开关）、`pack:published`。
+本地校验命令：
+
+```bash
+node scripts/validate-pack.mjs assets/packs/<id> <id> assets/packs/index.json
+```
 
 需要的仓库 Actions secrets：
 
@@ -98,8 +102,6 @@ Worker 按需从静态资产读取 `/packs/<id>/pack.json`（进程内缓存 5 �
 |---|---|
 | `CLOUDFLARE_API_TOKEN` | 部署 Worker（Account Workers Scripts 编辑权限） |
 | `CLOUDFLARE_ACCOUNT_ID` | 账户 id |
-
-校验规则的唯一权威实现是 `scripts/validate-pack.mjs`；投稿 zip 结构与默认套装一致（根目录 `pack.json` + 图片）。
 
 ## 本地开发
 

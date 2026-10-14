@@ -1,0 +1,51 @@
+name: Pack publish
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - "assets/packs/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  publish:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Re-validate before deploy
+        run: |
+          set -euo pipefail
+          for d in assets/packs/*/; do
+            id=$(basename "$d")
+            node scripts/validate-pack.mjs "$d" "$id" assets/packs/index.json
+          done
+
+      - name: Deploy worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund
+          npx wrangler deploy
+
+      - name: Comment on PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" --body "$(cat <<'EOF'
+          ## 🎉 套装已上线
+
+          合并完成，Worker 已重新部署：
+
+          - 介绍页（下拉框可选到新套装）：https://whale-star.whale-star.workers.dev/
+          - 直接使用：`https://whale-star.whale-star.workers.dev/?repo=owner/repo&pack=<套装id>`
+
+          感谢贡献！
+          EOF
+          )"

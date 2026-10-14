@@ -1,0 +1,50 @@
+name: Pack PR check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "assets/packs/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate all packs
+        run: |
+          set -uo pipefail
+          fail=0
+          for d in assets/packs/*/; do
+            id=$(basename "$d")
+            echo "::group::validate $id"
+            if ! node scripts/validate-pack.mjs "$d" "$id" assets/packs/index.json; then
+              fail=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $fail
+
+      - name: Comment on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" --body "$(cat <<'EOF'
+          ## ❌ 套装校验未通过
+
+          请根据上方 **Validate all packs** 的日志逐条修复，然后重新 push，本检查会自动复查。
+
+          快速自查：
+          - 目录名 = `pack.json` 里的 `id` = 小写字母/数字/连字符
+          - 第一档 `min: 0`，最后一档 `max: null`，中间档位连续无空洞
+          - 图片仅 `*.webp`/`*.png`，单张 ≤1.5MB、总体积 ≤15MB，且全部被 tiers 引用、目录里没有多余文件
+          - `assets/packs/index.json` 已添加同 id、同 name 的条目
+          - 本地可跑：`node scripts/validate-pack.mjs assets/packs/<id> <id> assets/packs/index.json`
+          EOF
+          )"

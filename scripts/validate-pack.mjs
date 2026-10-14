@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Validate an extracted custom-pack directory.
-// Usage: node scripts/validate-pack.mjs <dir> <expected-id>
+// Validate a pack directory (repo path, e.g. assets/packs/<id>).
+// Usage: node scripts/validate-pack.mjs <dir> <expected-id> [index.json path]
 // Prints one error per line to stderr and exits 1 on any failure.
 
 import fs from "node:fs";
 import path from "node:path";
 
-const [dir, expectedId] = process.argv.slice(2);
+const [dir, expectedId, indexPath] = process.argv.slice(2);
 const errors = [];
 const err = (m) => errors.push(m);
 
@@ -94,7 +94,39 @@ if (totalImageBytes > 15_000_000) err(`图片总体积 ${totalImageBytes} 字节
 for (const name of fs.readdirSync(dir)) {
   if (name === "pack.json") continue;
   if (imageFiles.has(name)) continue;
-  err(`zip 内存在未引用的文件: ${name}`);
+  err(`目录内存在未引用的文件: ${name}`);
+}
+
+// Optional: index.json consistency (every pack must be listed and vice versa)
+if (indexPath) {
+  if (!fs.existsSync(indexPath)) {
+    err(`找不到 ${indexPath}`);
+  } else {
+    try {
+      const list = JSON.parse(fs.readFileSync(indexPath, "utf8"));
+      if (!Array.isArray(list)) {
+        err("index.json 必须是数组");
+      } else {
+        const entry = list.find((p) => p.id === expectedId);
+        if (!entry) {
+          err(`index.json 缺少 id 为 "${expectedId}" 的条目`);
+        } else if (typeof entry.name !== "string" || !entry.name.trim()) {
+          err("index.json 条目缺少 name");
+        } else if (entry.name !== pack.name && pack.name) {
+          err(`index.json name（${entry.name}）与 pack.json name（${pack.name}）不一致`);
+        }
+        const extra = list.filter(
+          (p) =>
+            !fs.existsSync(path.join(path.dirname(indexPath), p.id, "pack.json")),
+        );
+        for (const p of extra) {
+          err(`index.json 列出了不存在的套装目录: ${p.id}`);
+        }
+      }
+    } catch (e) {
+      err(`index.json 不是合法 JSON: ${e.message}`);
+    }
+  }
 }
 
 finish();
