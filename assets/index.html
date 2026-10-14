@@ -17,6 +17,12 @@
     --line: rgba(30, 42, 80, 0.1);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* Scrollbar in the snippet-box palette (navy track, DeepSeek-blue thumb) */
+  * { scrollbar-width: thin; scrollbar-color: #4d6bfe #101a33; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #101a33; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb { background: #4d6bfe; border-radius: 999px; border: 2px solid #101a33; }
+  ::-webkit-scrollbar-thumb:hover { background: #6a83ff; }
   body {
     background: var(--bg);
     color: var(--ink);
@@ -49,6 +55,8 @@
   .snippet {
     display: flex; align-items: center; gap: 10px; background: #101a33; color: #dfe7ff;
     border-radius: 12px; padding: 12px 14px; overflow-x: auto;
+    position: sticky; top: 10px; z-index: 50;
+    box-shadow: 0 6px 20px rgba(16, 26, 51, 0.35);
   }
   .snippet code { font: 13px/1.5 ui-monospace, Consolas, monospace; white-space: nowrap; flex: 1; }
   .snippet button {
@@ -101,10 +109,11 @@
         <div class="hint" id="repo-hint">支持粘贴完整仓库链接，自动提取 owner/repo</div>
       </div>
     </div>
-    <div class="snippet">
-      <code id="code">&lt;img src="https://whale-star.whale-star.workers.dev/?repo=owner/repo&amp;pack=default" alt="star 大肥鱼" width="600" /&gt;</code>
-      <button type="button" id="copy">复制</button>
-    </div>
+  </div>
+
+  <div class="snippet" style="margin-bottom: 20px">
+    <code id="code">&lt;img src="https://whale-star.whale-star.workers.dev/?repo=owner/repo&amp;pack=default" alt="star 大肥鱼" width="600" /&gt;</code>
+    <button type="button" id="copy">复制</button>
   </div>
 
   <div class="panel" id="preview-panel" hidden>
