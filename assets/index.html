@@ -59,7 +59,7 @@
   h2 { font-size: 1.25rem; margin: 30px 0 12px; }
   .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
   .pcard { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; }
-  .pcard img { width: 100%; aspect-ratio: 3/2; object-fit: cover; display: block; background: #e7ebf4; }
+  .pcard img { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; display: block; background: #e7ebf4; }
   .pcard .cap { padding: 8px 10px 10px; font-size: 13px; }
   .pcard .cap b { color: var(--blue); margin-right: 6px; }
   .pcard .empty, .pempty { color: var(--muted); font-size: 14px; padding: 14px 4px; }
@@ -218,8 +218,6 @@
           card.className = "pcard";
           var img = document.createElement("img");
           img.loading = "lazy";
-          img.width = 1536;
-          img.height = 1024;
           img.alt = rangeLabel(t);
           img.src = "/packs/" + encodeURIComponent(packId) + "/" + encodeURIComponent(t.image);
           img.onerror = function () {
