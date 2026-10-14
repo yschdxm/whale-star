@@ -177,13 +177,31 @@
     return "T" + t.level + " · " + t.min + "–" + hi;
   }
 
+  function fetchRetry(url, tries) {
+    tries = tries || 2;
+    return fetch(url).then(function (r) {
+      if (r.ok) return r;
+      if (tries > 1) {
+        return new Promise(function (res) { setTimeout(res, 600); })
+          .then(function () { return fetchRetry(url, tries - 1); });
+      }
+      throw new Error(url + " → HTTP " + r.status);
+    }, function (e) {
+      if (tries > 1) {
+        return new Promise(function (res) { setTimeout(res, 600); })
+          .then(function () { return fetchRetry(url, tries - 1); });
+      }
+      throw e;
+    });
+  }
+
   function renderPreview(packId) {
     var seq = ++previewSeq;
     previewPanel.hidden = false;
     previewTitle.textContent = "套装预览 · " + packId;
     previewBox.className = "pempty";
     previewBox.textContent = "加载中…";
-    fetch("/packs/" + encodeURIComponent(packId) + "/pack.json")
+    fetchRetry("/packs/" + encodeURIComponent(packId) + "/pack.json")
       .then(function (r) {
         if (!r.ok) throw new Error("pack.json " + r.status);
         return r.json();
@@ -204,6 +222,13 @@
           img.height = 1024;
           img.alt = rangeLabel(t);
           img.src = "/packs/" + encodeURIComponent(packId) + "/" + encodeURIComponent(t.image);
+          img.onerror = function () {
+            if (img.dataset.retried) return;
+            img.dataset.retried = "1";
+            setTimeout(function () {
+              img.src = img.src.split("#")[0] + "?r=" + Date.now();
+            }, 600);
+          };
           var cap = document.createElement("div");
           cap.className = "cap";
           var b = document.createElement("b");
@@ -251,7 +276,7 @@
   }
 
   function loadPacks() {
-    return fetch("/packs/index.json").then(function (r) { return r.json(); }).then(function (list) {
+    return fetchRetry("/packs/index.json").then(function (r) { return r.json(); }).then(function (list) {
       packSel.innerHTML = "";
       list.forEach(function (p) {
         var opt = document.createElement("option");
