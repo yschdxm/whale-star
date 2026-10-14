@@ -69,7 +69,7 @@ async function getStarCount(repo, env) {
 async function serveTierImage(packId, tier, origin, env, extraHeaders = {}) {
   const imgUrl = new URL(`/packs/${packId}/${tier.image}`, origin);
   const imgResp = await env.ASSETS.fetch(new Request(imgUrl));
-  if (!imgResp.ok) {
+  if (!imgResp.ok && imgResp.status !== 304) {
     return new Response("asset not found", { status: 502 });
   }
   const headers = new Headers(imgResp.headers);
@@ -98,7 +98,7 @@ export default {
       // (pack.json / index.json / tier webp / favicon), else usage hint.
       if (url.pathname === "/" || url.pathname === "/index.html") {
         const page = await env.ASSETS.fetch(new Request(new URL("/index.html", url.origin)));
-        if (page.ok) {
+        if (page.ok || page.status === 304) {
           const h = new Headers(page.headers);
           h.set("X-Route", "landing");
           return new Response(page.body, { status: page.status, headers: h });
@@ -108,7 +108,8 @@ export default {
         return new Response(null, { status: 204, headers: { "X-Route": "favicon" } });
       }
       const asset = await env.ASSETS.fetch(request);
-      if (asset.ok) {
+      // 304 Not Modified is a successful revalidation — pass it through.
+      if (asset.ok || asset.status === 304) {
         const h = new Headers(asset.headers);
         h.set("X-Route", "asset");
         return new Response(asset.body, { status: asset.status, headers: h });
