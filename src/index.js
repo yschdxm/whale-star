@@ -84,10 +84,10 @@ export default {
     const url = new URL(request.url);
 
     if (request.method !== "GET" && request.method !== "HEAD") {
-      return new Response("Method Not Allowed", { status: 405 });
+      return new Response("Method Not Allowed", { status: 405, headers: { "X-Route": "method" } });
     }
     if (url.pathname === "/health") {
-      return new Response("ok", { status: 200 });
+      return new Response("ok", { status: 200, headers: { "X-Route": "health" } });
     }
 
     const repo = (url.searchParams.get("repo") || "").trim();
@@ -98,19 +98,33 @@ export default {
       // (pack.json / index.json / tier webp / favicon), else usage hint.
       if (url.pathname === "/" || url.pathname === "/index.html") {
         const page = await env.ASSETS.fetch(new Request(new URL("/index.html", url.origin)));
-        if (page.ok) return page;
+        if (page.ok) {
+          const h = new Headers(page.headers);
+          h.set("X-Route", "landing");
+          return new Response(page.body, { status: page.status, headers: h });
+        }
       }
       if (url.pathname === "/favicon.ico") {
-        return new Response(null, { status: 204 });
+        return new Response(null, { status: 204, headers: { "X-Route": "favicon" } });
       }
       const asset = await env.ASSETS.fetch(request);
-      if (asset.ok) return asset;
-      return new Response("Usage: /?repo=owner/name[&pack=default]", { status: 400 });
+      if (asset.ok) {
+        const h = new Headers(asset.headers);
+        h.set("X-Route", "asset");
+        return new Response(asset.body, { status: asset.status, headers: h });
+      }
+      return new Response("Usage: /?repo=owner/name[&pack=default]", {
+        status: 400,
+        headers: { "X-Route": "asset-miss" },
+      });
     }
 
     const pack = await loadPack(env, url.origin, packId);
     if (!pack) {
-      return new Response(`Unknown pack: ${packId}`, { status: 400 });
+      return new Response(`Unknown pack: ${packId}`, {
+        status: 400,
+        headers: { "X-Route": "unknown-pack" },
+      });
     }
 
     try {
@@ -119,6 +133,7 @@ export default {
       return await serveTierImage(packId, tier, url.origin, env, {
         "X-Star-Count": String(count),
         "X-Star-Tier": String(tier.level),
+        "X-Route": "tier",
       });
     } catch (err) {
       // GitHub API failed: serve tier-0 briefly so the README image never breaks.
@@ -126,6 +141,7 @@ export default {
       return await serveTierImage(packId, fallback, url.origin, env, {
         "X-Star-Count": "unknown",
         "X-Star-Tier": String(FALLBACK_TIER),
+        "X-Route": "tier-fallback",
         "X-Error": String(err && err.message ? err.message : err).slice(0, 120),
         "Cache-Control": "public, max-age=60, s-maxage=60",
       });
