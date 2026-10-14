@@ -1,0 +1,54 @@
+name: 提交自定义套装
+description: 按模板提交一个新的大肥鱼 pack，格式校验通过后由仓库主审核自动上线
+title: "[pack] "
+labels: ["pack:submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        欢迎投稿自定义套装！请先阅读下方要求，机器人会自动做格式校验，校验通过后等待仓库主审核。
+        **打包结构**：zip 根目录放 `pack.json` + 全部档位图片（`t0.webp` …）。
+        `pack.json` 示例与字段说明见仓库 `scripts/validate-pack.mjs` 和默认套装 `assets/packs/default/pack.json`。
+
+  - type: input
+    id: pack-id
+    attributes:
+      label: 套装 id
+      description: 小写字母/数字/连字符，≤32 字符，将作为 ?pack= 参数与目录名
+      placeholder: my-whale
+    validations:
+      required: true
+
+  - type: input
+    id: pack-name
+    attributes:
+      label: 套装名称
+      description: 显示在介绍页下拉菜单与套装列表中，≤40 字符
+      placeholder: 红色大肥鱼 · 春节套装
+    validations:
+      required: true
+
+  - type: input
+    id: zip-url
+    attributes:
+      label: 打包文件直链
+      description: 可公开下载的 https zip 直链（推荐传到自己仓库的 Release / GitHub 文件直链）。单图 ≤1.5MB，总体积 ≤15MB。
+      placeholder: https://github.com/you/your-repo/releases/download/v1/my-whale.zip
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: 补充说明（可选）
+      description: 设计思路、授权声明（请确认素材有权用于非商业 README 展示）等
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认
+      options:
+        - label: 我确认素材为自己创作或已获授权，允许他人在个人 README 中非商业使用
+          required: true
+        - label: 我已按模板结构打包（pack.json 在 zip 根目录，档位连续、末档 max 为 null）
+          required: true

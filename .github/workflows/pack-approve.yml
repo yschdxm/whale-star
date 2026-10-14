@@ -1,0 +1,114 @@
+name: Pack approve & publish
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  publish:
+    if: github.event.label.name == 'pack:approved' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch issue body
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue view "${{ github.event.issue.number }}" --json body -q .body > /tmp/issue-body.txt
+
+      - name: Validate pack format (required again)
+        id: vp
+        uses: ./.github/actions/validate-pack
+        with:
+          issue-body-file: /tmp/issue-body.txt
+
+      - name: Abort on invalid pack
+        if: steps.vp.outputs.ok != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ERRORS: ${{ steps.vp.outputs.errors }}
+        run: |
+          gh issue edit "${{ github.event.issue.number }}" --remove-label "pack:format-ok" --add-label "pack:format-error" || true
+          gh issue comment "${{ github.event.issue.number }}" --body "## ⚠️ 批准后复查失败
+
+          打包内容与上次校验时不一致或下载失败，未发布：
+
+          $ERRORS
+
+          请修复后移除 \`pack:approved\` 标签再重新打上，触发发布。"
+          exit 1
+
+      - name: Install pack into assets
+        id: install
+        env:
+          PACK_ID: ${{ steps.vp.outputs.pack-id }}
+          PACK_NAME: ${{ steps.vp.outputs.pack-name }}
+        run: |
+          set -euo pipefail
+          rm -rf "assets/packs/$PACK_ID"
+          mkdir -p "assets/packs/$PACK_ID"
+          cp /tmp/packzip/pack.json "assets/packs/$PACK_ID/pack.json"
+          node -e '
+            const fs = require("fs");
+            const pack = JSON.parse(fs.readFileSync(`assets/packs/${process.env.PACK_ID}/pack.json`, "utf8"));
+            for (const t of pack.tiers) {
+              fs.copyFileSync(`/tmp/packzip/${t.image}`, `assets/packs/${process.env.PACK_ID}/${t.image}`);
+            }
+          '
+          node -e '
+            const fs = require("fs");
+            const id = process.env.PACK_ID;
+            const name = process.env.PACK_NAME || id;
+            const listPath = "assets/packs/index.json";
+            const list = JSON.parse(fs.readFileSync(listPath, "utf8"));
+            const existing = list.find((p) => p.id === id);
+            if (existing) existing.name = name;
+            else list.push({ id, name });
+            fs.writeFileSync(listPath, JSON.stringify(list, null, 2) + "\n");
+          '
+
+      - name: Commit & push
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "assets/packs/${{ steps.vp.outputs.pack-id }}"
+          git add assets/packs/index.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "pack: add ${{ steps.vp.outputs.pack-id }} (via #${{ github.event.issue.number }})"
+            git push
+          fi
+
+      - name: Deploy worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund
+          npx wrangler deploy
+
+      - name: Comment success
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACK_ID: ${{ steps.vp.outputs.pack-id }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --body "$(cat <<EOF
+          ## 🎉 套装已上线
+
+          \`$PACK_ID\` 已合入仓库并完成部署：
+
+          - 介绍页：https://whale-star.whale-star.workers.dev/
+          - 直接使用：\`https://whale-star.whale-star.workers.dev/?repo=owner/repo&pack=$PACK_ID\`
+
+          感谢贡献！
+          EOF
+          )"
+          gh issue edit "${{ github.event.issue.number }}" --remove-label "pack:approved" --add-label "pack:published" || true

@@ -55,7 +55,13 @@ token 可用本地 `gh auth token` 的输出，或 GitHub 上建一个无权限�
 
 ## 新增套装
 
-1. 在 `assets/packs/<pack-id>/` 放入 `pack.json` 与各档图片（建议 WebP，长边 1536）；
+两种途径：
+
+**A. 用户途径（推荐）**：Issue 模板提交 → 机器人校验 → 维护者打 `pack:approved` 标签 → 自动合入并部署（见下文「套装投稿流水线」）。
+
+**B. 手动途径**：
+
+1. 在 `assets/packs/<pack-id>/` 放入 `pack.json` 与各档图片（建议 WebP，长边 1536，单图 ≤1.5MB）；
 2. `pack.json` 结构参考 `default`：
 
    ```json
@@ -70,10 +76,30 @@ token 可用本地 `gh auth token` 的输出，或 GitHub 上建一个无权限�
    }
    ```
 
-   `max: null` 表示无上限；`min`/`max` 闭区间，按 `level` 升序排列。
+   约束：`max: null` 表示无上限且必须是最后一档；`min`/`max` 闭区间连续不留空洞；第一档 `min: 0`；图片只允许 `*.webp`/`*.png` 且不带路径。
 
-3. 在 `src/index.js` 顶部 `PACKS` 中注册（静态 import 该 `pack.json`）；
+3. 把 `{ "id", "name" }` 追加到 `assets/packs/index.json`（介绍页下拉菜单数据源）；
 4. `npx wrangler deploy` 后以 `?repo=owner/name&pack=<pack-id>` 引用。
+
+Worker 按需从静态资产读取 `/packs/<id>/pack.json`（进程内缓存 5 分钟），无需改代码注册。
+
+## 套装投稿流水线
+
+| 阶段 | 触发 | 动作 |
+|---|---|---|
+| 格式校验 | Issue opened/edited/reopened，标题含 `[pack]` | `pack-review.yml`：解析表单 → 下载 zip → `scripts/validate-pack.mjs` 校验。失败打 `pack:format-error` 并评论问题清单；通过打 `pack:format-ok` 通知等待审核 |
+| 批准发布 | 维护者打 `pack:approved` 标签 | `pack-approve.yml`：重新校验 → 拷入 `assets/packs/<id>/` → 更新 `index.json` → commit/push → `wrangler deploy` → 评论成功并打 `pack:published` |
+
+标签：`pack:submission`（模板自动）、`pack:format-ok`、`pack:format-error`、`pack:approved`（人工，发布开关）、`pack:published`。
+
+需要的仓库 Actions secrets：
+
+| Secret | 用途 |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | 部署 Worker（Account Workers Scripts 编辑权限） |
+| `CLOUDFLARE_ACCOUNT_ID` | 账户 id |
+
+校验规则的唯一权威实现是 `scripts/validate-pack.mjs`；投稿 zip 结构与默认套装一致（根目录 `pack.json` + 图片）。
 
 ## 本地开发
 

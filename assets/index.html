@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>大肥鱼讨 Star · whale-star</title>
-<meta name="description" content="按 GitHub star 数自动切换档位的「蓝色大肥鱼」README 应援图服务，一行 img 接入。" />
+<meta name="description" content="按 GitHub star 数自动切换档位的大肥鱼 README 应援图服务，一行 img 接入，支持自定义套装。" />
 <style>
   :root {
     --bg: #f4f8ff;
@@ -22,62 +22,55 @@
     color: var(--ink);
     font: 16px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 20px 64px; }
-  header { text-align: center; margin-bottom: 40px; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 48px 20px 64px; }
+  header { text-align: center; margin-bottom: 32px; }
   .badge {
     display: inline-block; background: var(--blue-soft); color: var(--blue);
     border: 1px solid rgba(77, 107, 254, 0.3); border-radius: 999px;
     padding: 3px 14px; font-size: 13px; font-weight: 600; margin-bottom: 14px;
   }
-  h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: 0.02em; margin-bottom: 10px; }
+  h1 { font-size: 2.1rem; font-weight: 800; letter-spacing: 0.02em; margin-bottom: 10px; }
   h1 .star { color: var(--gold); }
-  .sub { color: var(--muted); font-size: 1.02rem; max-width: 560px; margin: 0 auto; }
-  .demo {
+  .sub { color: var(--muted); font-size: 1rem; max-width: 520px; margin: 0 auto; }
+  .panel {
     background: var(--card); border: 1px solid var(--line); border-radius: 16px;
-    padding: 18px; margin: 28px 0 16px; box-shadow: 0 8px 24px rgba(23, 35, 80, 0.06);
+    padding: 22px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(23, 35, 80, 0.06);
   }
-  .demo img { width: 100%; height: auto; display: block; border-radius: 10px; }
-  .demo .cap { text-align: center; color: var(--muted); font-size: 13px; margin-top: 10px; }
+  .row { display: grid; gap: 12px; margin-bottom: 14px; }
+  @media (min-width: 560px) { .row.two { grid-template-columns: 1fr 1fr; } }
+  label { display: block; font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 5px; }
+  select, input[type="text"] {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+    font-size: 15px; background: #fff; color: var(--ink); outline: none;
+  }
+  select:focus, input[type="text"]:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 5px; }
+  .hint.err { color: #c0392b; }
   .snippet {
     display: flex; align-items: center; gap: 10px; background: #101a33; color: #dfe7ff;
-    border-radius: 12px; padding: 12px 14px; margin: 0 0 44px; overflow-x: auto;
+    border-radius: 12px; padding: 12px 14px; overflow-x: auto;
   }
   .snippet code { font: 13px/1.5 ui-monospace, Consolas, monospace; white-space: nowrap; flex: 1; }
   .snippet button {
     border: none; background: var(--blue); color: #fff; border-radius: 8px;
-    padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink: 0;
+    padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink: 0;
   }
   .snippet button:hover { filter: brightness(1.08); }
-  h2 { font-size: 1.35rem; margin: 36px 0 16px; }
-  .tiers {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px;
+  h2 { font-size: 1.25rem; margin: 30px 0 12px; }
+  .packs { display: grid; gap: 10px; }
+  .pack {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 16px; text-decoration: none; color: var(--ink);
+    transition: transform .15s ease, box-shadow .15s ease;
   }
-  .tier {
-    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-    overflow: hidden; transition: transform .18s ease, box-shadow .18s ease;
-  }
-  .tier:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(23, 35, 80, 0.1); }
-  .tier img { width: 100%; aspect-ratio: 3/2; object-fit: cover; display: block; background: #e7ebf4; }
-  .tier .meta { padding: 10px 12px 12px; }
-  .tier .range {
-    display: inline-block; background: var(--blue-soft); color: var(--blue);
-    border-radius: 999px; padding: 1px 10px; font-size: 12px; font-weight: 700; margin-bottom: 4px;
-  }
-  .tier .line { font-size: 14px; font-weight: 600; }
-  .steps { counter-reset: s; display: grid; gap: 12px; }
-  .step {
-    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-    padding: 16px 18px 16px 56px; position: relative;
-  }
-  .step::before {
-    counter-increment: s; content: counter(s);
-    position: absolute; left: 16px; top: 16px; width: 28px; height: 28px;
-    background: var(--blue); color: #fff; border-radius: 50%;
-    display: grid; place-items: center; font-weight: 800; font-size: 14px;
-  }
-  .step b { display: block; margin-bottom: 2px; }
-  .step span { color: var(--muted); font-size: 14px; }
-  footer { margin-top: 52px; text-align: center; color: var(--muted); font-size: 13px; }
+  .pack:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(23, 35, 80, 0.08); }
+  .pack .pname { font-weight: 700; }
+  .pack .ppath { font: 12px/1.4 ui-monospace, Consolas, monospace; color: var(--blue); }
+  .steps { display: grid; gap: 10px; }
+  .step { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; font-size: 14px; }
+  .step b { color: var(--blue); }
+  footer { margin-top: 48px; text-align: center; color: var(--muted); font-size: 13px; }
   footer a { color: var(--blue); text-decoration: none; }
 </style>
 </head>
@@ -86,49 +79,136 @@
   <header>
     <div class="badge">GitHub README 组件 · 免费托管</div>
     <h1>大肥鱼讨 <span class="star">Star</span> ⭐</h1>
-    <p class="sub">你仓库的 star 越多，盆里的星星就越多，大肥鱼越开心——按 star 数自动切换的 README 应援图，一行 <code>img</code> 接入，零配置。</p>
+    <p class="sub">你仓库的 star 越多，盆里的星星越多。选套装、填仓库，复制链接贴进 README 即可。</p>
   </header>
 
-  <div class="demo">
-    <img src="/packs/default/t9.webp" alt="当前档位演示：传说级大肥鱼" width="1536" height="1024" />
-    <div class="cap">实时演示：deepseek-ai/DeepSeek-V3（10 万+ star → T9 传说档）</div>
+  <div class="panel">
+    <div class="row two">
+      <div>
+        <label for="pack">套装</label>
+        <select id="pack"><option value="default">default</option></select>
+        <div class="hint" id="pack-hint">加载套装列表…</div>
+      </div>
+      <div>
+        <label for="repo">仓库</label>
+        <input id="repo" type="text" placeholder="https://github.com/owner/repo 或 owner/repo" autocomplete="off" />
+        <div class="hint" id="repo-hint">支持粘贴完整仓库链接，自动提取 owner/repo</div>
+      </div>
+    </div>
+    <div class="snippet">
+      <code id="code">&lt;img src="https://whale-star.whale-star.workers.dev/?repo=owner/repo&amp;pack=default" alt="star 大肥鱼" width="600" /&gt;</code>
+      <button type="button" id="copy">复制</button>
+    </div>
   </div>
 
-  <div class="snippet">
-    <code id="code">&lt;img src="https://whale-star.whale-star.workers.dev/?repo=你的用户名/仓库名" width="600" /&gt;</code>
-    <button type="button" id="copy">复制</button>
-  </div>
-
-  <h2>十档成长路线</h2>
-  <div class="tiers">
-    <div class="tier"><img src="/packs/default/t0.webp" alt="T0" /><div class="meta"><span class="range">T0 · 0 star</span><div class="line">呜…一颗星都没有</div></div></div>
-    <div class="tier"><img src="/packs/default/t1.webp" alt="T1" /><div class="meta"><span class="range">T1 · 1–9</span><div class="line">有一颗了！谢谢你！</div></div></div>
-    <div class="tier"><img src="/packs/default/t2.webp" alt="T2" /><div class="meta"><span class="range">T2 · 10–49</span><div class="line">十几颗啦，本鱼开心</div></div></div>
-    <div class="tier"><img src="/packs/default/t3.webp" alt="T3" /><div class="meta"><span class="range">T3 · 50–199</span><div class="line">冒尖了！还要还要～</div></div></div>
-    <div class="tier"><img src="/packs/default/t4.webp" alt="T4" /><div class="meta"><span class="range">T4 · 200–499</span><div class="line">盆要装不下啦！</div></div></div>
-    <div class="tier"><img src="/packs/default/t5.webp" alt="T5" /><div class="meta"><span class="range">T5 · 500–999</span><div class="line">堆到脚踝咯，嘿嘿</div></div></div>
-    <div class="tier"><img src="/packs/default/t6.webp" alt="T6" /><div class="meta"><span class="range">T6 · 1k–2.9k</span><div class="line">已经埋到腰啦！</div></div></div>
-    <div class="tier"><img src="/packs/default/t7.webp" alt="T7" /><div class="meta"><span class="range">T7 · 3k–9.9k</span><div class="line">天上也下星星了！</div></div></div>
-    <div class="tier"><img src="/packs/default/t8.webp" alt="T8" /><div class="meta"><span class="range">T8 · 10k–49.9k</span><div class="line">本鱼在星海游泳～</div></div></div>
-    <div class="tier"><img src="/packs/default/t9.webp" alt="T9" /><div class="meta"><span class="range">T9 · 50k+</span><div class="line">传说级大肥鱼！</div></div></div>
+  <h2>可用套装</h2>
+  <div class="packs" id="packs">
+    <a class="pack" href="?pack=default"><span class="pname">蓝色大肥鱼 · 默认套装</span><span class="ppath">?pack=default</span></a>
   </div>
 
   <h2>怎么用</h2>
   <div class="steps">
-    <div class="step"><b>复制上面的 img 代码</b><span>把「你的用户名/仓库名」换成目标仓库，贴进 README.md 任意位置。</span></div>
-    <div class="step"><b>等待缓存刷新</b><span>star 数与图片缓存约 5 分钟，跨档后通常 10 分钟内生效。</span></div>
-    <div class="step"><b>看大肥鱼干饭</b><span>每跨过一个档位，插画和文案都会换新——star 是真的能喂鱼的。</span></div>
+    <div class="step"><b>1.</b> 选套装、贴仓库链接，复制上面的代码放进 README。</div>
+    <div class="step"><b>2.</b> star 数与图片缓存约 5 分钟，跨档后通常 10 分钟内生效。</div>
+    <div class="step"><b>3.</b> 想要自己的套装？用 <a href="https://github.com/yschdxm/whale-star/issues/new?template=custom-pack.yml">Issue 模板</a> 提交，格式校验通过后等仓库主审核即可自动上线。</div>
   </div>
 
   <footer>
     <p>响应头 <code>X-Star-Count</code> / <code>X-Star-Tier</code> 可用于调试 ·
-    自部署与多套装见 <a href="https://github.com/yschdxm/whale-star">GitHub 仓库</a></p>
-    <p style="margin-top:6px">「大肥鱼」为 DeepSeek 社区二创形象，本项目与 DeepSeek 官方无关；仅供个人 README 非商业使用。</p>
+    源码与自部署见 <a href="https://github.com/yschdxm/whale-star">GitHub 仓库</a></p>
+    <p style="margin-top:6px">「大肥鱼」为 DeepSeek 社区二创形象，本项目与 DeepSeek 官方无关；插画仅供个人 README 非商业使用。</p>
   </footer>
 </div>
 <script>
-  document.getElementById("copy").addEventListener("click", function () {
-    var text = document.getElementById("code").textContent;
+(function () {
+  var ORIGIN = location.origin;
+  var packSel = document.getElementById("pack");
+  var repoInput = document.getElementById("repo");
+  var codeEl = document.getElementById("code");
+  var copyBtn = document.getElementById("copy");
+  var packHint = document.getElementById("pack-hint");
+  var repoHint = document.getElementById("repo-hint");
+  var packsBox = document.getElementById("packs");
+
+  function parseRepo(raw) {
+    raw = (raw || "").trim();
+    if (!raw) return null;
+    var m = raw.match(/github\.com\/([^\/\s]+)\/([^\/#\s?]+)/i);
+    if (!m) m = raw.match(/^([\w.-]+)\/([\w.-]+)$/);
+    if (!m) return null;
+    var owner = m[1];
+    var repo = m[2].replace(/\.git$/i, "");
+    if (!/^[\w.-]+$/.test(owner) || !/^[\w.-]+$/.test(repo)) return null;
+    return owner + "/" + repo;
+  }
+
+  function update() {
+    var pack = packSel.value || "default";
+    var repo = parseRepo(repoInput.value) || "owner/repo";
+    var url = ORIGIN + "/?repo=" + encodeURIComponent(repo) + "&pack=" + encodeURIComponent(pack);
+    codeEl.textContent = '<img src="' + url + '" alt="star 大肥鱼" width="600" />';
+    var hasRepo = !!parseRepo(repoInput.value);
+    repoHint.className = "hint" + (repoInput.value.trim() && !hasRepo ? " err" : "");
+    repoHint.textContent = !repoInput.value.trim()
+      ? "支持粘贴完整仓库链接，自动提取 owner/repo"
+      : hasRepo
+        ? "已识别：" + repo
+        : "还不能识别这个输入，试试 https://github.com/owner/repo";
+  }
+
+  function setPackFromQuery() {
+    var m = location.search.match(/[?&]pack=([\w-]+)/);
+    if (m) {
+      var want = m[1];
+      var opt = Array.prototype.find.call(packSel.options, function (o) { return o.value === want; });
+      if (opt) packSel.value = want;
+    }
+  }
+
+  function renderPacks(list) {
+    packsBox.innerHTML = "";
+    list.forEach(function (p) {
+      var a = document.createElement("a");
+      a.className = "pack";
+      a.href = "?pack=" + encodeURIComponent(p.id);
+      var name = document.createElement("span");
+      name.className = "pname";
+      name.textContent = p.name || p.id;
+      var path = document.createElement("span");
+      path.className = "ppath";
+      path.textContent = "?pack=" + p.id;
+      a.appendChild(name);
+      a.appendChild(path);
+      packsBox.appendChild(a);
+    });
+  }
+
+  function loadPacks() {
+    return fetch("/packs/index.json").then(function (r) { return r.json(); }).then(function (list) {
+      packSel.innerHTML = "";
+      list.forEach(function (p) {
+        var opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = (p.name || p.id) + "（" + p.id + "）";
+        packSel.appendChild(opt);
+      });
+      setPackFromQuery();
+      packHint.textContent = "共 " + list.length + " 个套装";
+      renderPacks(list);
+      update();
+    }).catch(function () {
+      packHint.textContent = "套装列表加载失败，已回退 default";
+      update();
+    });
+  }
+
+  packSel.addEventListener("change", function () {
+    update();
+    history.replaceState(null, "", "?pack=" + encodeURIComponent(packSel.value));
+  });
+  repoInput.addEventListener("input", update);
+  copyBtn.addEventListener("click", function () {
+    var text = codeEl.textContent;
     var btn = this;
     (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () {
       btn.textContent = "已复制";
@@ -137,6 +217,10 @@
       btn.textContent = "复制失败";
     });
   });
+
+  loadPacks();
+  update();
+})();
 </script>
 </body>
 </html>

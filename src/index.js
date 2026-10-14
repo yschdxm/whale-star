@@ -1,9 +1,10 @@
-import defaultPack from "../assets/packs/default/pack.json";
-
-const PACKS = { default: defaultPack };
 const REPO_RE = /^[\w.-]+\/[\w.-]+$/;
-const CACHE_TTL = 300; // seconds: star-count cache & image CDN cache
+const PACK_ID_RE = /^[a-z0-9][a-z0-9-]{0,32}$/;
+const CACHE_TTL = 300; // seconds
 const FALLBACK_TIER = 0;
+
+/** In-isolate pack.json cache: id -> { pack, ts } */
+const packCache = new Map();
 
 function tierFor(count, pack) {
   for (const tier of pack.tiers) {
@@ -11,6 +12,21 @@ function tierFor(count, pack) {
     if (count >= tier.min && count <= max) return tier;
   }
   return pack.tiers[FALLBACK_TIER];
+}
+
+async function loadPack(env, origin, packId) {
+  if (!PACK_ID_RE.test(packId)) return null;
+  const now = Date.now();
+  const hit = packCache.get(packId);
+  if (hit && now - hit.ts < CACHE_TTL * 1000) return hit.pack;
+  const res = await env.ASSETS.fetch(
+    new Request(new URL(`/packs/${packId}/pack.json`, origin)),
+  );
+  if (!res.ok) return null;
+  const pack = await res.json();
+  if (!pack || !Array.isArray(pack.tiers) || pack.tiers.length === 0) return null;
+  packCache.set(packId, { pack, ts: now });
+  return pack;
 }
 
 async function getStarCount(repo, env) {
@@ -75,14 +91,11 @@ export default {
     }
 
     const repo = (url.searchParams.get("repo") || "").trim();
-    const packId = url.searchParams.get("pack") || "default";
-    const pack = PACKS[packId];
-    if (!pack) {
-      return new Response(`Unknown pack: ${packId}`, { status: 400 });
-    }
+    const packId = (url.searchParams.get("pack") || "default").trim();
+
     if (!REPO_RE.test(repo)) {
       // Landing page at "/", otherwise pass through static assets
-      // (tier webp / pack.json / favicon), else usage hint.
+      // (pack.json / index.json / tier webp / favicon), else usage hint.
       if (url.pathname === "/" || url.pathname === "/index.html") {
         const page = await env.ASSETS.fetch(new Request(new URL("/index.html", url.origin)));
         if (page.ok) return page;
@@ -95,18 +108,21 @@ export default {
       return new Response("Usage: /?repo=owner/name[&pack=default]", { status: 400 });
     }
 
-    const packCfg = pack;
+    const pack = await loadPack(env, url.origin, packId);
+    if (!pack) {
+      return new Response(`Unknown pack: ${packId}`, { status: 400 });
+    }
+
     try {
       const count = await getStarCount(repo, env);
-      const tier = tierFor(count, packCfg);
+      const tier = tierFor(count, pack);
       return await serveTierImage(packId, tier, url.origin, env, {
         "X-Star-Count": String(count),
         "X-Star-Tier": String(tier.level),
       });
     } catch (err) {
-      // GitHub API failed (rate limit / network): serve tier-0 briefly so the
-      // README image never breaks, and surface the error in a header.
-      const fallback = packCfg.tiers[FALLBACK_TIER];
+      // GitHub API failed: serve tier-0 briefly so the README image never breaks.
+      const fallback = pack.tiers[FALLBACK_TIER];
       return await serveTierImage(packId, fallback, url.origin, env, {
         "X-Star-Count": "unknown",
         "X-Star-Tier": String(FALLBACK_TIER),

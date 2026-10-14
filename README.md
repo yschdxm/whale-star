@@ -97,6 +97,10 @@
   </tr>
 </table>
 
+## 提交自定义套装
+
+用 [自定义套装 Issue 模板](https://github.com/yschdxm/whale-star/issues/new?template=custom-pack.yml) 提交：填套装 id、名称和 zip 直链即可。机器人自动做格式校验（不通过会逐条指出问题，改完重新编辑 Issue 会自动复查）；校验通过后仓库主审核，打上批准标签即自动合入仓库并部署上线。
+
 ## 声明
 
 「大肥鱼」为 DeepSeek 社区二创形象，本项目与 DeepSeek 官方无关；插画仅供个人 README 非商业使用。
