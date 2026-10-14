@@ -2,9 +2,9 @@
 
 按仓库 star 数自动切换档位的「蓝色大肥鱼」README 应援图。star 越多，盆里的星星越多，大肥鱼越开心。
 
-**实时演示**（跟着 deepseek-ai/DeepSeek-V3 的 star 数走）：
+**实时演示**（跟着本仓库的 star 数走，点 ⭐ 后约 10 分钟换图）：
 
-![star 大肥鱼](https://whale-star.whale-star.workers.dev/?repo=deepseek-ai/DeepSeek-V3)
+![star 大肥鱼](https://whale-star.whale-star.workers.dev/?repo=yschdxm/whale-star)
 
 ## 接入
 
@@ -24,20 +24,78 @@
 
 ## 档位一览
 
-| 档位 | star 数 | 大肥鱼状态 |
-|---|---|---|
-| T0 | 0 | 空盆，愁眉苦脸 |
-| T1 | 1–9 | 几颗星，小心期待 |
-| T2 | 10–49 | 盆底一层，小满足 |
-| T3 | 50–199 | 冒尖了 |
-| T4 | 200–499 | 盆要装不下 |
-| T5 | 500–999 | 堆到脚踝 |
-| T6 | 1k–2.9k | 埋到腰 |
-| T7 | 3k–9.9k | 星星从天而降 |
-| T8 | 10k–49.9k | 星海游泳 |
-| T9 | 50k+ | 传说级大肥鱼！ |
-
-十档图鉴见在线介绍页：https://whale-star.whale-star.workers.dev/
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <a href="https://whale-star.whale-star.workers.dev/packs/default/t0.webp">
+        <img src="https://whale-star.whale-star.workers.dev/packs/default/t0.webp" width="400" alt="T0 · 0 star" />
+      </a>
+      <br /><b>T0</b> · 0 star — 呜…一颗星都没有
+    </td>
+    <td align="center" width="50%">
+      <a href="https://whale-star.whale-star.workers.dev/packs/default/t1.webp">
+        <img src="https://whale-star.whale-star.workers.dev/packs/default/t1.webp" width="400" alt="T1 · 1–9 star" />
+      </a>
+      <br /><b>T1</b> · 1–9 — 有一颗了！谢谢你！
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <a href="https://whale-star.whale-star.workers.dev/packs/default/t2.webp">
+        <img src="https://whale-star.whale-star.workers.dev/packs/default/t2.webp" width="400" alt="T2 · 10–49 star" />
+      </a>
+      <br /><b>T2</b> · 10–49 — 十几颗啦，本鱼开心
+    </td>
+    <td align="center">
+      <a href="https://whale-star.whale-star.workers.dev/packs/default/t3.webp">
+        <img src="https://whale-star.whale-star.workers.dev/packs/default/t3.webp" width="400" alt="T3 · 50–199 star" />
+      </a>
+      <br /><b>T3</b> · 50–199 — 冒尖了！还要还要～
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <a href="https://whale-star.whale-star.workers.dev/packs/default/t4.webp">
+        <img src="https://whale-star.whale-star.workers.dev/packs/default/t4.webp" width="400" alt="T4 · 200–499 star" />
+      </a>
+      <br /><b>T4</b> · 200–499 — 盆要装不下啦！
+    </td>
+    <td align="center">
+      <a href="https://whale-star.whale-star.workers.dev/packs/default/t5.webp">
+        <img src="https://whale-star.whale-star.workers.dev/packs/default/t5.webp" width="400" alt="T5 · 500–999 star" />
+      </a>
+      <br /><b>T5</b> · 500–999 — 堆到脚踝咯，嘿嘿
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <a href="https://whale-star.whale-star.workers.dev/packs/default/t6.webp">
+        <img src="https://whale-star.whale-star.workers.dev/packs/default/t6.webp" width="400" alt="T6 · 1k–2.9k star" />
+      </a>
+      <br /><b>T6</b> · 1k–2.9k — 已经埋到腰啦！
+    </td>
+    <td align="center">
+      <a href="https://whale-star.whale-star.workers.dev/packs/default/t7.webp">
+        <img src="https://whale-star.whale-star.workers.dev/packs/default/t7.webp" width="400" alt="T7 · 3k–9.9k star" />
+      </a>
+      <br /><b>T7</b> · 3k–9.9k — 天上也下星星了！
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <a href="https://whale-star.whale-star.workers.dev/packs/default/t8.webp">
+        <img src="https://whale-star.whale-star.workers.dev/packs/default/t8.webp" width="400" alt="T8 · 10k–49.9k star" />
+      </a>
+      <br /><b>T8</b> · 10k–49.9k — 本鱼在星海游泳～
+    </td>
+    <td align="center">
+      <a href="https://whale-star.whale-star.workers.dev/packs/default/t9.webp">
+        <img src="https://whale-star.whale-star.workers.dev/packs/default/t9.webp" width="400" alt="T9 · 50k+ star" />
+      </a>
+      <br /><b>T9</b> · 50k+ — 传说级大肥鱼！
+    </td>
+  </tr>
+</table>
 
 ## 声明
 
