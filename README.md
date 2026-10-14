@@ -26,9 +26,9 @@
 
 ## 可用套装
 
-| 套装 | 路径 |
+| 套装 | 仓库路径 |
 |---|---|
-| [蓝色大肥鱼 · 默认套装](https://whale-star.whale-star.workers.dev/?pack=default) | `https://whale-star.whale-star.workers.dev/?pack=default` |
+| [蓝色大肥鱼 · 默认套装](https://github.com/yschdxm/whale-star/tree/main/assets/packs/default) | `assets/packs/default/` |
 
 以上列表同步自 `assets/packs/index.json`，新套装上线后会出现在这里与介绍页下拉菜单中。
 

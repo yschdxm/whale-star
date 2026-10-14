@@ -57,6 +57,12 @@
   }
   .snippet button:hover { filter: brightness(1.08); }
   h2 { font-size: 1.25rem; margin: 30px 0 12px; }
+  .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .pcard { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; }
+  .pcard img { width: 100%; aspect-ratio: 3/2; object-fit: cover; display: block; background: #e7ebf4; }
+  .pcard .cap { padding: 8px 10px 10px; font-size: 13px; }
+  .pcard .cap b { color: var(--blue); margin-right: 6px; }
+  .pcard .empty, .pempty { color: var(--muted); font-size: 14px; padding: 14px 4px; }
   .packs { display: grid; gap: 10px; }
   .pack {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -99,6 +105,11 @@
       <code id="code">&lt;img src="https://whale-star.whale-star.workers.dev/?repo=owner/repo&amp;pack=default" alt="star 大肥鱼" width="600" /&gt;</code>
       <button type="button" id="copy">复制</button>
     </div>
+  </div>
+
+  <div class="panel" id="preview-panel" hidden>
+    <h2 id="preview-title" style="margin-top:0">套装预览</h2>
+    <div id="preview-box" class="pempty">加载中…</div>
   </div>
 
   <h2>可用套装</h2>
@@ -156,6 +167,62 @@
         : "还不能识别这个输入，试试 https://github.com/owner/repo";
   }
 
+  var previewPanel = document.getElementById("preview-panel");
+  var previewTitle = document.getElementById("preview-title");
+  var previewBox = document.getElementById("preview-box");
+  var previewSeq = 0;
+
+  function rangeLabel(t) {
+    var hi = t.max == null ? "∞" : String(t.max);
+    return "T" + t.level + " · " + t.min + "–" + hi;
+  }
+
+  function renderPreview(packId) {
+    var seq = ++previewSeq;
+    previewPanel.hidden = false;
+    previewTitle.textContent = "套装预览 · " + packId;
+    previewBox.className = "pempty";
+    previewBox.textContent = "加载中…";
+    fetch("/packs/" + encodeURIComponent(packId) + "/pack.json")
+      .then(function (r) {
+        if (!r.ok) throw new Error("pack.json " + r.status);
+        return r.json();
+      })
+      .then(function (pack) {
+        if (seq !== previewSeq) return;
+        if (!pack || !Array.isArray(pack.tiers) || !pack.tiers.length) throw new Error("empty tiers");
+        previewBox.className = "";
+        previewBox.innerHTML = "";
+        var grid = document.createElement("div");
+        grid.className = "preview-grid";
+        pack.tiers.forEach(function (t) {
+          var card = document.createElement("div");
+          card.className = "pcard";
+          var img = document.createElement("img");
+          img.loading = "lazy";
+          img.width = 1536;
+          img.height = 1024;
+          img.alt = rangeLabel(t);
+          img.src = "/packs/" + encodeURIComponent(packId) + "/" + encodeURIComponent(t.image);
+          var cap = document.createElement("div");
+          cap.className = "cap";
+          var b = document.createElement("b");
+          b.textContent = rangeLabel(t);
+          cap.appendChild(b);
+          cap.appendChild(document.createTextNode(t.text || ""));
+          card.appendChild(img);
+          card.appendChild(cap);
+          grid.appendChild(card);
+        });
+        previewBox.appendChild(grid);
+      })
+      .catch(function (e) {
+        if (seq !== previewSeq) return;
+        previewBox.className = "pempty";
+        previewBox.textContent = "预览加载失败：" + (e && e.message ? e.message : e);
+      });
+  }
+
   function setPackFromQuery() {
     var m = location.search.match(/[?&]pack=([\w-]+)/);
     if (m) {
@@ -196,6 +263,7 @@
       packHint.textContent = "共 " + list.length + " 个套装";
       renderPacks(list);
       update();
+      renderPreview(packSel.value);
     }).catch(function () {
       packHint.textContent = "套装列表加载失败，已回退 default";
       update();
@@ -204,6 +272,7 @@
 
   packSel.addEventListener("change", function () {
     update();
+    renderPreview(packSel.value);
     history.replaceState(null, "", "?pack=" + encodeURIComponent(packSel.value));
   });
   repoInput.addEventListener("input", update);
