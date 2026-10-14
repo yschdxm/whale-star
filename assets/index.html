@@ -54,11 +54,15 @@
   .hint.err { color: #c0392b; }
   .snippet {
     display: flex; align-items: center; gap: 10px; background: #101a33; color: #dfe7ff;
-    border-radius: 12px; padding: 12px 14px; overflow-x: auto;
+    border-radius: 12px; padding: 12px 14px;
     position: sticky; top: 10px; z-index: 50;
     box-shadow: 0 6px 20px rgba(16, 26, 51, 0.35);
   }
-  .snippet code { font: 13px/1.5 ui-monospace, Consolas, monospace; white-space: nowrap; flex: 1; }
+  .snippet-scroll {
+    flex: 1; min-width: 0; overflow-x: auto;
+    padding: 2px 2px 4px;
+  }
+  .snippet code { font: 13px/1.5 ui-monospace, Consolas, monospace; white-space: nowrap; }
   .snippet button {
     border: none; background: var(--blue); color: #fff; border-radius: 8px;
     padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink: 0;
@@ -112,7 +116,9 @@
   </div>
 
   <div class="snippet" style="margin-bottom: 20px">
-    <code id="code">&lt;img src="https://whale-star.whale-star.workers.dev/?repo=owner/repo&amp;pack=default" alt="star 大肥鱼" width="600" /&gt;</code>
+    <div class="snippet-scroll">
+      <code id="code">&lt;img src="https://whale-star.whale-star.workers.dev/?repo=owner/repo&amp;pack=default" alt="star 大肥鱼" width="600" /&gt;</code>
+    </div>
     <button type="button" id="copy">复制</button>
   </div>
 
