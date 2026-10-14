@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "default",
+  "name": "蓝色大肥鱼 · 默认套装",
+  "description": "Q版女仆鲸鱼娘（DeepSeek娘社区二创形象）捧不锈钢盆讨 Star，按 star 数分10档换图换文案。",
+  "canvas": { "width": 1536, "height": 1024 },
+  "tiers": [
+    { "level": 0, "min": 0,      "max": 0,     "text": "呜…一颗星都没有",   "image": "t0.webp" },
+    { "level": 1, "min": 1,      "max": 9,     "text": "有一颗了！谢谢你！", "image": "t1.webp" },
+    { "level": 2, "min": 10,     "max": 49,    "text": "十几颗啦，本鱼开心", "image": "t2.webp" },
+    { "level": 3, "min": 50,     "max": 199,   "text": "冒尖了！还要还要～", "image": "t3.webp" },
+    { "level": 4, "min": 200,    "max": 499,   "text": "盆要装不下啦！",     "image": "t4.webp" },
+    { "level": 5, "min": 500,    "max": 999,   "text": "堆到脚踝咯，嘿嘿",   "image": "t5.webp" },
+    { "level": 6, "min": 1000,   "max": 2999,  "text": "已经埋到腰啦！",     "image": "t6.webp" },
+    { "level": 7, "min": 3000,   "max": 9999,  "text": "天上也下星星了！",   "image": "t7.webp" },
+    { "level": 8, "min": 10000,  "max": 49999, "text": "本鱼在星海游泳～",   "image": "t8.webp" },
+    { "level": 9, "min": 50000,  "max": null,  "text": "传说级大肥鱼！",     "image": "t9.webp" }
+  ]
+}

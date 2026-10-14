@@ -1,0 +1,20 @@
+{
+  "name": "whale-star",
+  "version": "1.0.0",
+  "description": "按 GitHub 仓库 star 数返回不同档位的「蓝色大肥鱼」插画（WebP）。方案：Cloudflare Worker + Static Assets，使用者零配置。",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "wrangler": "^4.151.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "workerd@1.20261012.1": true
+  }
+}
