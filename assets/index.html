@@ -100,6 +100,23 @@
     <p class="sub">你仓库的 star 越多，盆里的星星越多。选套装、填仓库，复制链接贴进 README 即可。</p>
   </header>
 
+  <div class="panel" id="stats-panel" hidden>
+    <div
+      style="display: flex; flex-wrap: wrap; gap: 22px 36px; align-items: center; justify-content: center; font-family: inherit;"
+    >
+      <span style="font-size: 18px; color: var(--muted)"
+        >📊 累计调用 <b id="st-total" style="color: var(--gold); font-size: 26px">–</b></span
+      >
+      <span style="font-size: 18px; color: var(--muted)"
+        >今日 <b id="st-today" style="color: var(--blue); font-size: 26px">–</b></span
+      >
+      <span id="st-top" style="display: flex; gap: 10px; flex-wrap: wrap"></span>
+    </div>
+    <div class="hint" style="text-align: center; margin-top: 8px">
+      口径：Worker 实际服务次数（边缘缓存命中不计入）
+    </div>
+  </div>
+
   <div class="panel">
     <div class="row two">
       <div>
@@ -327,6 +344,36 @@
 
   loadPacks();
   update();
+
+  // Live call stats (from the Worker's Durable Object counter)
+  (function loadStats() {
+    var panel = document.getElementById("stats-panel");
+    fetch("/api/stats")
+      .then(function (r) {
+        if (!r.ok) throw new Error("stats " + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        document.getElementById("st-total").textContent =
+          d.total >= 10000 ? (d.total / 1000).toFixed(1) + "k" : (d.total || 0).toLocaleString("en-US");
+        document.getElementById("st-today").textContent = (d.today || 0).toLocaleString("en-US");
+        var top = document.getElementById("st-top");
+        (d.top || []).slice(0, 3).forEach(function (t) {
+          var a = document.createElement("a");
+          a.href = "https://github.com/" + t.repo;
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.textContent = t.repo;
+          a.style.cssText =
+            "background: var(--blue-soft); color: var(--blue); border-radius: 999px; padding: 4px 14px; font-size: 14px; font-weight: 600; text-decoration: none;";
+          top.appendChild(a);
+        });
+        panel.hidden = false;
+      })
+      .catch(function () {
+        /* stats strip stays hidden */
+      });
+  })();
 })();
 </script>
 </body>

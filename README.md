@@ -6,6 +6,8 @@
 
 ![star 大肥鱼](https://whale-star.whale-star.workers.dev/?repo=yschdxm/whale-star)
 
+![调用统计](https://whale-star.whale-star.workers.dev/badge)
+
 **在线介绍页（含生成器与套装列表）**：https://whale-star.whale-star.workers.dev/
 
 ## 接入

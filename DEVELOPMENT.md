@@ -53,6 +53,13 @@ npx wrangler secret put GITHUB_TOKEN
 
 token 可用本地 `gh auth token` 的输出，或 GitHub 上建一个无权限勾选的只读 PAT。
 
+## 调用统计
+
+- **写入**：每次 Worker 实际服务档位图（含回退档）时，`ctx.waitUntil` 异步打点到 Durable Object `StatsDO`（`STATS` 绑定，单实例串行计数，无竞态、无需额外令牌）。
+- **读取**：`GET /api/stats`（JSON：total / today / 近 7 日 / Top5 仓库，介绍页统计条消费，`max-age=60`）；`GET /badge`（SVG 徽章，README 用，`max-age=300`）。
+- **口径**：边缘缓存命中的图片请求不经过 Worker，因此统计为「Worker 实际服务次数」，略低于真实浏览量；精确总量可在 CF 后台 GraphQL 分析查看。
+- 明细按 `repo|pack|tier` 聚合，DO 内最多保留 500 个条目、30 天日计数。
+
 ## 新增套装
 
 两种途径：
