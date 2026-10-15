@@ -57,7 +57,7 @@ token 可用本地 `gh auth token` 的输出，或 GitHub 上建一个无权限�
 
 - **写入**：每次 Worker 实际服务档位图（含回退档）时，`ctx.waitUntil` 异步打点到 Durable Object `StatsDO`（`STATS` 绑定，单实例串行计数，无竞态、无需额外令牌）。
 - **读取**：`GET /api/stats`（JSON：total / today / 近 7 日 / Top5 仓库，介绍页统计条消费，`max-age=60`）；`GET /badge`（SVG 徽章，README 用，`max-age=300`）。
-- **口径**：边缘缓存命中的图片请求不经过 Worker，因此统计为「Worker 实际服务次数」，略低于真实浏览量；精确总量可在 CF 后台 GraphQL 分析查看。
+- **口径**：`run_worker_first: true` 保证边缘缓存命中（CF-Cache-Status: HIT）时 Worker 照常执行，因此 DO 计数**精确等于 Cloudflare 收到的图片请求数**（已用同 URL 双请求实验验证 HIT/HIT 且计数 +2）。唯一无法覆盖的是 GitHub camo 自身 5 分钟缓存窗口内的展示合并——这层对任何外部服务都存在。图片缓存保持 `max-age=300` 不受影响。
 - 明细按 `repo|pack|tier` 聚合，DO 内最多保留 500 个条目、30 天日计数。
 
 ## 新增套装

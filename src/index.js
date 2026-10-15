@@ -181,6 +181,9 @@ async function serveTierImage(packId, tier, origin, env, extraHeaders = {}) {
   }
   const headers = new Headers(imgResp.headers);
   headers.set("Content-Type", "image/webp");
+  // Cache stays ON: run_worker_first guarantees the Worker (and the DO
+  // counter) executes even on CF-Cache-Status HIT — proven by double-fetch
+  // tests (HIT, HIT, total +2). Precision does not require no-store.
   headers.set("Cache-Control", `public, max-age=${CACHE_TTL}, s-maxage=${CACHE_TTL}`);
   for (const [k, v] of Object.entries(extraHeaders)) headers.set(k, v);
   return new Response(imgResp.body, { headers });
