@@ -4,3 +4,5 @@ node_modules/
 .env
 .env.*
 *.err
+out/
+svg-test.js
