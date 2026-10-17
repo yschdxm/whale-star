@@ -91,6 +91,29 @@ const fmtNum = (n) =>
 const textW = (s, fs = 11) =>
   [...s].reduce((w, ch) => w + (ch.charCodeAt(0) > 0x2e80 ? fs : fs * 0.6), 0);
 
+/** Read a response body as a base64 data-URI payload. */
+async function webpToDataB64(resp) {
+  const bytes = new Uint8Array(await resp.arrayBuffer());
+  let bin = "";
+  const CH = 0x2000;
+  for (let i = 0; i < bytes.length; i += CH) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + CH));
+  }
+  return btoa(bin);
+}
+
+/** Tier artwork + live star-count pill — the production image format. */
+function countOverlaySvg(b64, count) {
+  const countStr = count.toLocaleString("en-US");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1024" viewBox="0 0 1536 1024">
+  <image href="data:image/webp;base64,${b64}" width="1536" height="1024"/>
+  <g>
+    <rect x="1116" y="892" width="372" height="96" rx="48" fill="#101a33" fill-opacity="0.82"/>
+    <text x="1302" y="957" text-anchor="middle" font-size="56" font-weight="700" fill="#f5c518" font-family="'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif">★ ${countStr}</text>
+  </g>
+</svg>`;
+}
+
 /** Shields-style badge: whale-star | 已调用 N 次 */
 function badgeSvg(total) {
   const label = "whale-star";
@@ -248,6 +271,49 @@ export default {
       });
     }
 
+    // TEST-ONLY: live star-count overlay via SVG (does not touch the production image path)
+    if (url.pathname === "/preview/count") {
+      const previewRepo = (url.searchParams.get("repo") || "").trim();
+      const previewPackId = (url.searchParams.get("pack") || "default").trim();
+      if (!REPO_RE.test(previewRepo)) {
+        return new Response("Usage: /preview/count?repo=owner/name[&pack=default]", { status: 400 });
+      }
+      try {
+        const pack = await loadPack(env, url.origin, previewPackId);
+        if (!pack) return new Response(`Unknown pack: ${previewPackId}`, { status: 400 });
+        const count = await getStarCount(previewRepo, env);
+        const tier = tierFor(count, pack);
+        const imgUrl = new URL(`/packs/${previewPackId}/${tier.image}`, url.origin);
+        const imgResp = await env.ASSETS.fetch(new Request(imgUrl));
+        if (!imgResp.ok) return new Response("asset not found", { status: 502 });
+        const bytes = new Uint8Array(await imgResp.arrayBuffer());
+        let bin = "";
+        const CH = 0x2000;
+        for (let i = 0; i < bytes.length; i += CH) {
+          bin += String.fromCharCode(...bytes.subarray(i, i + CH));
+        }
+        const b64 = btoa(bin);
+        const countStr = count.toLocaleString("en-US");
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1024" viewBox="0 0 1536 1024">
+  <image href="data:image/webp;base64,${b64}" width="1536" height="1024"/>
+  <g>
+    <rect x="1116" y="892" width="372" height="96" rx="48" fill="#101a33" fill-opacity="0.82"/>
+    <text x="1302" y="957" text-anchor="middle" font-size="56" font-weight="700" fill="#f5c518" font-family="'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif">★ ${countStr}</text>
+  </g>
+</svg>`;
+        return new Response(svg, {
+          headers: {
+            "Content-Type": "image/svg+xml; charset=utf-8",
+            "Cache-Control": "no-store",
+            "X-Route": "preview-count",
+            "X-Star-Count": String(count),
+          },
+        });
+      } catch (err) {
+        return new Response(`preview error: ${err && err.message}`, { status: 502 });
+      }
+    }
+
     const repo = (url.searchParams.get("repo") || "").trim();
     const packId = (url.searchParams.get("pack") || "default").trim();
 
@@ -290,13 +356,22 @@ export default {
       const count = await getStarCount(repo, env);
       const tier = tierFor(count, pack);
       countHit(ctx, env, repo, packId, tier.level);
-      return await serveTierImage(packId, tier, url.origin, env, {
-        "X-Star-Count": String(count),
-        "X-Star-Tier": String(tier.level),
-        "X-Route": "tier",
+      // Production format: tier artwork as SVG with the live star-count pill.
+      const imgUrl = new URL(`/packs/${packId}/${tier.image}`, url.origin);
+      const imgResp = await env.ASSETS.fetch(new Request(imgUrl));
+      if (!imgResp.ok) return new Response("asset not found", { status: 502 });
+      const b64 = await webpToDataB64(imgResp);
+      return new Response(countOverlaySvg(b64, count), {
+        headers: {
+          "Content-Type": "image/svg+xml; charset=utf-8",
+          "Cache-Control": `public, max-age=${CACHE_TTL}, s-maxage=${CACHE_TTL}`,
+          "X-Route": "tier-svg",
+          "X-Star-Count": String(count),
+          "X-Star-Tier": String(tier.level),
+        },
       });
     } catch (err) {
-      // GitHub API failed: serve tier-0 briefly so the README image never breaks.
+      // GitHub API failed: serve tier-0 WebP briefly so the README image never breaks.
       const fallback = pack.tiers[FALLBACK_TIER];
       countHit(ctx, env, repo, packId, FALLBACK_TIER);
       return await serveTierImage(packId, fallback, url.origin, env, {
