@@ -43,3 +43,11 @@ Fork 仓库 → 复制 `assets/packs/default` 改成你的套装 → 提 PR，**
 「大肥鱼」为 DeepSeek 社区二创形象，本项目与 DeepSeek 官方无关；插画仅供个人 README 非商业使用。
 
 自部署、新增套装与本地开发见 [DEVELOPMENT.md](./DEVELOPMENT.md)。
+
+## 支持本项目
+
+觉得大肥鱼可爱的话，欢迎请作者喝杯奶茶：
+
+<img src="https://afdian.com/static/img/welcome/button-sponsorme.png" alt="在爱发电支持我" width="200">
+
+或直接访问：<https://ifdian.net/a/yschdxm>
