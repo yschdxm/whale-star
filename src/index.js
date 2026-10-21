@@ -3,6 +3,50 @@ const PACK_ID_RE = /^[a-z0-9][a-z0-9-]{0,32}$/;
 const CACHE_TTL = 300; // seconds
 const FALLBACK_TIER = 0;
 
+// Verification budget: at most 3 README checks per repo per day, and at
+// least 2h between consecutive checks of the same repo (cold-start first
+// check excepted — nothing to space from). An ok=true verdict goes stale
+// after 8h (≈3 refreshes/day max).
+const VERIFY_STALE_MS = 8 * 60 * 60 * 1000;
+const VERIFY_MIN_INTERVAL_MS = 2 * 60 * 60 * 1000;
+const VERIFY_DAILY_BUDGET = 3;
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+/**
+ * Pure decision: should this repo be README-verified right now?
+ * Cross-day checks reset is applied in-memory (read-only for /hit).
+ */
+function decideVerify(rec, now, day) {
+  if (!rec) return true; // cold start
+  const checks = rec.day === day ? rec.checks : 0;
+  if (rec.ok) {
+    if (now - rec.ts <= VERIFY_STALE_MS) return false; // fresh pass
+    return checks < VERIFY_DAILY_BUDGET; // stale: refresh within budget
+  }
+  if (checks >= VERIFY_DAILY_BUDGET) return false;
+  return now - rec.ts >= VERIFY_MIN_INTERVAL_MS;
+}
+
+/** Accumulate one verified hit into the "s" stats blob (with growth bounds). */
+function bumpCount(data, day, repo, pack, tier) {
+  data.total += 1;
+  data.days[day] = (data.days[day] || 0) + 1;
+  const key = `${repo}|${pack}|${tier}`;
+  data.repos[key] = (data.repos[key] || 0) + 1;
+  // Bound growth: keep the freshest 500 entries by count.
+  const entries = Object.entries(data.repos);
+  if (entries.length > 500) {
+    entries.sort((a, b) => b[1] - a[1]);
+    data.repos = Object.fromEntries(entries.slice(0, 500));
+  }
+  const dayKeys = Object.keys(data.days).sort();
+  if (dayKeys.length > 30) {
+    for (const k of dayKeys.slice(0, dayKeys.length - 30)) delete data.days[k];
+  }
+  return data;
+}
+
 /** Exact call counter (single-instance Durable Object — no races, no extra tokens). */
 export class StatsDO {
   constructor(state) {
@@ -13,27 +57,49 @@ export class StatsDO {
     const url = new URL(request.url);
     if (request.method === "POST" && url.pathname === "/hit") {
       const { repo, pack, tier } = await request.json();
-      const data = (await this.state.storage.get("s")) || {
-        total: 0,
-        days: {},
-        repos: {},
-      };
-      data.total += 1;
-      const day = new Date().toISOString().slice(0, 10);
-      data.days[day] = (data.days[day] || 0) + 1;
-      const key = `${repo}|${pack}|${tier}`;
-      data.repos[key] = (data.repos[key] || 0) + 1;
-      // Bound growth: keep the freshest 500 entries by count.
-      const entries = Object.entries(data.repos);
-      if (entries.length > 500) {
-        entries.sort((a, b) => b[1] - a[1]);
-        data.repos = Object.fromEntries(entries.slice(0, 500));
+      const day = today();
+      const v = (await this.state.storage.get("v")) || {};
+      const rec = v[repo];
+      const needVerify = decideVerify(rec, Date.now(), day);
+      if (!needVerify) {
+        if (rec && rec.ok) {
+          const data = (await this.state.storage.get("s")) || {
+            total: 0,
+            days: {},
+            repos: {},
+          };
+          bumpCount(data, day, repo, pack, tier);
+          await this.state.storage.put("s", data);
+        }
+        return Response.json({
+          needVerify: false,
+          ok: !!(rec && rec.ok),
+          counted: !!(rec && rec.ok),
+        });
       }
-      const dayKeys = Object.keys(data.days).sort();
-      if (dayKeys.length > 30) {
-        for (const k of dayKeys.slice(0, dayKeys.length - 30)) delete data.days[k];
+      return Response.json({ needVerify: true, ok: false, counted: false });
+    }
+    if (request.method === "POST" && url.pathname === "/verdict") {
+      const { repo, ok, pack, tier } = await request.json();
+      const day = today();
+      const v = (await this.state.storage.get("v")) || {};
+      const prev = v[repo];
+      // Defensive: never blow past the daily budget with extra negative verdicts.
+      if (!ok && prev && prev.day === day && prev.checks >= VERIFY_DAILY_BUDGET) {
+        return new Response("ok");
       }
-      await this.state.storage.put("s", data);
+      const checks = (prev && prev.day === day ? prev.checks : 0) + 1;
+      v[repo] = { ok: !!ok, ts: Date.now(), day, checks };
+      await this.state.storage.put("v", v);
+      if (ok) {
+        const data = (await this.state.storage.get("s")) || {
+          total: 0,
+          days: {},
+          repos: {},
+        };
+        bumpCount(data, day, repo, pack, tier);
+        await this.state.storage.put("s", data);
+      }
       return new Response("ok");
     }
     if (url.pathname === "/summary") {
