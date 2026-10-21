@@ -11,7 +11,7 @@
 
 | 改什么 | 动哪里 |
 |---|---|
-| 档位逻辑 / 星数叠加 / 统计 / 徽章 | `src/index.js` |
+| 档位逻辑 / 星数叠加 / 统计（验证计数、cron、/api/repos）/ 徽章 | `src/index.js` |
 | 介绍页 | `assets/index.html` |
 | 套装（图片 + 阈值文案） | `assets/packs/<id>/`（`pack.json` + t*.webp）+ `assets/packs/index.json` 登记 |
 | 绑定 / DO 迁移 | `wrangler.jsonc` |
@@ -21,7 +21,8 @@
 
 - `wrangler.jsonc` 里 `assets.run_worker_first: true` **不能删**——它保证每次请求都经过 Worker（统计精确、静态资源路由都依赖它）。
 - 生产图片响应是 **SVG**（档位 WebP 内嵌 base64 + 右下角实时星数胶囊），GitHub API 失败时回退为 T0 WebP。
-- 统计走 Durable Object（`StatsDO`，绑定名 `STATS`）：`/api/stats` 供介绍页，`/badge` 供 README 徽章。计数在 `ctx.waitUntil` 里异步打点，绝不阻塞出图。
+- 统计走 Durable Object（`StatsDO`，绑定名 `STATS`）：`/api/stats` 供介绍页，`/api/repos` 供分页名单+双榜（`max-age=600`），`/badge` 供 README 徽章。计数在 `ctx.waitUntil` 里异步打点，绝不阻塞出图。
+- **计数是「验证后计数」**：只有 README 里真实嵌入本服务（含域名且含 `repo=owner/name`）的仓库才累计。每仓库每天最多校验 3 次、两次校验至少间隔 2 小时；GitHub API 失败时本次不计数、不耗预算。每日 cron（04:00 UTC）复验全名单，已移除嵌入的仓库连同榜单条目剔除。
 - 星数有 300s 边缘缓存；`/preview/count` 是测试路由，生产路径之外。
 
 ## 上线方式
@@ -42,8 +43,10 @@ npx wrangler deploy         # 发布（代码+静态资产整体上传，生成�
 
 ```bash
 npx wrangler dev --port 8787     # 本地起服务
-# /health | /（介绍页）| /?repo=owner/name（档位图+星数）| /badge | /api/stats
+# /health | /（介绍页）| /?repo=owner/name（档位图+星数）| /badge | /api/stats | /api/repos
+curl "http://127.0.0.1:8787/cdn-cgi/local/scheduled"   # 本地手动触发每日复验 cron
 ```
 
-线上自检：`curl -sD - -o /dev/null "https://whale-star.whale-star.workers.dev/?repo=octocat/Hello-World"`
+线上自检：`curl -sD - -o /dev/null "https://whale-star.whale-star.workers.dev/?repo=yschdxm/whale-star"`
 看 `X-Route: tier-svg`、`X-Star-Count`、`X-Star-Tier` 三个响应头。
+（自检不要用 `octocat/Hello-World`——它是文档示例、README 未嵌入本服务，验证后计数不会给它计数，只白耗一次校验。）
