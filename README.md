@@ -10,6 +10,8 @@
 
 **在线介绍页（含生成器与套装列表）**：https://whale-star.whale-star.workers.dev/
 
+[![爱发电](https://img.shields.io/badge/%E7%88%B1%E5%8F%91%E7%94%B5-%E8%AF%B7%E6%88%91%E5%96%9D%E6%9D%AF%E5%A5%B6%E8%8C%B6-7e5fd9?logo=afdian&logoColor=white)](https://ifdian.net/a/yschdxm)
+
 ## 接入
 
 在你的 README.md 里加一行：
