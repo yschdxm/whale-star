@@ -56,7 +56,7 @@ Fork 仓库 → 复制 `assets/packs/default` 改成你的套装 → 提 PR，**
 
 | 支付宝 | 微信支付 |
 |:---:|:---:|
-| <img src="./.github/assets/alipay.png" alt="支付宝收款码" width="280"> | <img src="./.github/assets/wechat-pay.png" alt="微信支付收款码" width="280"> |
+| <img src="./.github/assets/alipay.png" alt="支付宝收款码" height="340"> | <img src="./.github/assets/wechat-pay.png" alt="微信支付收款码" height="340"> |
 
 *不便扫码？也可以在 [爱发电](https://ifdian.net/a/yschdxm) 上支持，那里能留下你想看的功能建议。*
 
