@@ -105,6 +105,48 @@ export class StatsDO {
       }
       return new Response("ok");
     }
+    if (request.method === "POST" && url.pathname === "/reverify-list") {
+      const data = (await this.state.storage.get("s")) || {
+        total: 0,
+        days: {},
+        repos: {},
+      };
+      const repos = [
+        ...new Set(Object.keys(data.repos).map((key) => key.split("|")[0])),
+      ];
+      return Response.json({ repos });
+    }
+    if (request.method === "POST" && url.pathname === "/reverify-result") {
+      const { repo, ok } = await request.json();
+      if (ok) {
+        // Cron re-check passed: refresh the verdict timestamp, spend no budget.
+        const day = today();
+        const v = (await this.state.storage.get("v")) || {};
+        const prev = v[repo];
+        v[repo] = {
+          ok: true,
+          ts: Date.now(),
+          day,
+          checks: prev && prev.day === day ? prev.checks : 0,
+        };
+        await this.state.storage.put("v", v);
+        return new Response("ok");
+      }
+      // Embed removed: drop the repo from the list (and its counts) and forget it.
+      const data = (await this.state.storage.get("s")) || {
+        total: 0,
+        days: {},
+        repos: {},
+      };
+      for (const key of Object.keys(data.repos)) {
+        if (key.startsWith(`${repo}|`)) delete data.repos[key];
+      }
+      await this.state.storage.put("s", data);
+      const v = (await this.state.storage.get("v")) || {};
+      delete v[repo];
+      await this.state.storage.put("v", v);
+      return new Response("ok");
+    }
     if (url.pathname === "/summary") {
       const data = (await this.state.storage.get("s")) || {
         total: 0,
@@ -317,6 +359,34 @@ async function serveTierImage(packId, tier, origin, env, extraHeaders = {}) {
 }
 
 export default {
+  /** Daily cron: re-verify every listed repo; drop those whose README no longer embeds us. */
+  async scheduled(event, env, ctx) {
+    if (!env.STATS) return;
+    const stub = env.STATS.get(env.STATS.idFromName("global"));
+    const listResp = await stub.fetch("https://stats.internal/reverify-list", {
+      method: "POST",
+    });
+    const { repos } = await listResp.json();
+    const CONCURRENCY = 10;
+    for (let i = 0; i < repos.length; i += CONCURRENCY) {
+      const batch = repos.slice(i, i + CONCURRENCY);
+      await Promise.all(
+        batch.map(async (repo) => {
+          try {
+            const verdict = await verifyRepoEmbed(repo, env);
+            if (verdict === null) return; // API error: skip, retry next cron
+            await stub.fetch("https://stats.internal/reverify-result", {
+              method: "POST",
+              body: JSON.stringify({ repo, ok: verdict }),
+            });
+          } catch {
+            /* one repo failing must not abort the batch */
+          }
+        }),
+      );
+    }
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
