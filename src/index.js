@@ -3,6 +3,9 @@ const PACK_ID_RE = /^[a-z0-9][a-z0-9-]{0,32}$/;
 const CACHE_TTL = 300; // seconds
 const FALLBACK_TIER = 0;
 
+// Hostname used in README weak-match verification (must match production).
+const SERVICE_HOST = "whale-star.whale-star.workers.dev";
+
 // Verification budget: at most 3 README checks per repo per day, and at
 // least 2h between consecutive checks of the same repo (cold-start first
 // check excepted — nothing to space from). An ok=true verdict goes stale
@@ -133,21 +136,56 @@ export class StatsDO {
   }
 }
 
-/** Fire-and-forget increment; never blocks or fails the image response. */
-function countHit(ctx, env, repo, packId, tierLevel) {
+/** Fire-and-forget verified increment; never blocks or fails the image response. */
+function countHitVerified(ctx, env, repo, packId, tierLevel) {
   if (!env.STATS || !ctx) return;
   try {
     const stub = env.STATS.get(env.STATS.idFromName("global"));
     ctx.waitUntil(
-      stub
-        .fetch("https://stats.internal/hit", {
+      (async () => {
+        const r = await stub.fetch("https://stats.internal/hit", {
           method: "POST",
           body: JSON.stringify({ repo, pack: packId, tier: tierLevel }),
-        })
-        .catch(() => {}),
+        });
+        const { needVerify } = await r.json();
+        if (!needVerify) return; // DO already counted (ok) or skipped (failed/budget)
+        const verdict = await verifyRepoEmbed(repo, env);
+        if (verdict === null) return; // GitHub API error: count nothing, spend no budget
+        await stub.fetch("https://stats.internal/verdict", {
+          method: "POST",
+          body: JSON.stringify({ repo, ok: verdict, pack: packId, tier: tierLevel }),
+        });
+      })().catch(() => {}),
     );
   } catch {
     /* stats must never break serving */
+  }
+}
+
+/**
+ * Fetch the repo's README and weak-match for an embed of this service.
+ * Returns true (embedded), false (no README / not embedded), or null when the
+ * GitHub API itself failed (403/5xx/network) — callers must then count
+ * nothing and spend no verification budget ("宁可少计不可错计").
+ */
+async function verifyRepoEmbed(repo, env) {
+  try {
+    const headers = {
+      Accept: "application/vnd.github.raw",
+      "User-Agent": "whale-star",
+      "X-GitHub-Api-Version": "2022-11-28",
+    };
+    if (env.GITHUB_TOKEN) headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
+    const resp = await fetch(`https://api.github.com/repos/${repo}/readme`, { headers });
+    if (resp.status === 404) return false; // no README / private / nonexistent
+    if (!resp.ok) return null; // rate limit, server error, network weirdness
+    const text = await resp.text();
+    return (
+      text.includes(SERVICE_HOST) &&
+      (text.includes(`repo=${repo}`) || text.includes(`repo=${encodeURIComponent(repo)}`))
+    );
+  } catch {
+    return null;
   }
 }
 
@@ -421,7 +459,7 @@ export default {
     try {
       const count = await getStarCount(repo, env);
       const tier = tierFor(count, pack);
-      countHit(ctx, env, repo, packId, tier.level);
+      countHitVerified(ctx, env, repo, packId, tier.level);
       // Production format: tier artwork as SVG with the live star-count pill.
       const imgUrl = new URL(`/packs/${packId}/${tier.image}`, url.origin);
       const imgResp = await env.ASSETS.fetch(new Request(imgUrl));
@@ -439,7 +477,7 @@ export default {
     } catch (err) {
       // GitHub API failed: serve tier-0 WebP briefly so the README image never breaks.
       const fallback = pack.tiers[FALLBACK_TIER];
-      countHit(ctx, env, repo, packId, FALLBACK_TIER);
+      countHitVerified(ctx, env, repo, packId, FALLBACK_TIER);
       return await serveTierImage(packId, fallback, url.origin, env, {
         "X-Star-Count": "unknown",
         "X-Star-Tier": String(FALLBACK_TIER),

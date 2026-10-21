@@ -3,6 +3,7 @@ node_modules/
 *.log
 .env
 .env.*
+.dev.vars
 *.err
 out/
 svg-test.js
