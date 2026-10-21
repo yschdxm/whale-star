@@ -504,7 +504,11 @@ export default {
           .filter((x) => x.stars != null)
           .sort((a, b) => b.stars - a.stars)
           .slice(0, 5);
-        const repos = withStars.slice(offset, offset + limit);
+        // Paginated list is star-ranked: stars desc (unknown stars sink), count as tiebreak.
+        const ranked = withStars
+          .slice()
+          .sort((a, b) => (b.stars == null ? -1 : b.stars) - (a.stars == null ? -1 : a.stars) || b.count - a.count);
+        const repos = ranked.slice(offset, offset + limit);
 
         return new Response(
           JSON.stringify({

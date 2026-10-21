@@ -61,7 +61,7 @@ token 可用本地 `gh auth token` 的输出，或 GitHub 上建一个无权限�
   GitHub API 失败/限流时本次不计数、不消耗校验预算（宁可少计不可错计），图片照常返回。
 - **校验预算**：每仓库每天最多校验 3 次，任意两次校验至少间隔 2 小时；通过的结论 8 小时后视为过期可刷新。结论缓存在 DO 的 `"v"` key。
 - **每日复验**：cron（`0 4 * * *` UTC）重新校验名单中全部仓库，README 已移除嵌入的仓库连同其榜单条目一起删除（`total` 为 all-time 累计，不回退）。
-- **读取**：`GET /api/stats`（total / today / 近 7 日 / Top5，`max-age=60`）；`GET /api/repos`（分页全名单 + 调用 Top5 + Star Top5，star 取自 GitHub API 前 40 名，`max-age=600`，介绍页消费）；`GET /badge`（SVG 徽章，`max-age=300`）。
+- **读取**：`GET /api/stats`（total / today / 近 7 日 / Top5，`max-age=60`）；`GET /api/repos`（分页全名单按 star 降序 + 调用 Top5 + Star Top5，star 取自 GitHub API 前 40 名，`max-age=600`，介绍页消费）；`GET /badge`（SVG 徽章，`max-age=300`）。
 - **口径**：`run_worker_first: true` 保证每个图片请求（含边缘缓存命中）都会触发打点流程；但只有「README 确实嵌入了本服务」的仓库才真正累计。私有仓库 README 拉不到，不上榜。
 - 明细按 `repo|pack|tier` 聚合，DO 内最多保留 500 个条目、30 天日计数。
 
