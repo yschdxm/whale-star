@@ -93,6 +93,23 @@ export class StatsDO {
       }
       const checks = (prev && prev.day === day ? prev.checks : 0) + 1;
       v[repo] = { ok: !!ok, ts: Date.now(), day, checks };
+      // GC the verdict map (it has no natural bound): drop negatives older
+      // than 48h (they cold-start again anyway), then cap negatives at the
+      // 1000 newest by ts. Pass verdicts are never evicted — they only exist
+      // for real, counted users and are bounded by the 500-entry s.repos cap.
+      const V_GC_AGE_MS = 48 * 60 * 60 * 1000;
+      const V_MAX = 1000;
+      const nowTs = v[repo].ts;
+      for (const [k, rec] of Object.entries(v)) {
+        if (!rec.ok && nowTs - rec.ts > V_GC_AGE_MS) delete v[k];
+      }
+      const negKeys = Object.keys(v).filter((k) => !v[k].ok);
+      if (negKeys.length > V_MAX) {
+        negKeys
+          .sort((a, b) => v[b].ts - v[a].ts)
+          .slice(V_MAX)
+          .forEach((k) => delete v[k]);
+      }
       await this.state.storage.put("v", v);
       if (ok) {
         const data = (await this.state.storage.get("s")) || {
