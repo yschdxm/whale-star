@@ -110,10 +110,17 @@
       <span style="font-size: 18px; color: var(--muted)"
         >今日 <b id="st-today" style="color: var(--blue); font-size: 26px">–</b></span
       >
-      <span id="st-top" style="display: flex; gap: 10px; flex-wrap: wrap"></span>
     </div>
-    <div class="hint" style="text-align: center; margin-top: 8px">
-      口径：Cloudflare 收到的每次图片请求都精确计入（含边缘缓存命中）
+    <div style="margin-top: 12px">
+      <div style="font-size: 13px; color: var(--muted); margin-bottom: 6px">🔥 调用 Top5</div>
+      <span id="st-calls-top" style="display: flex; gap: 10px; flex-wrap: wrap"></span>
+    </div>
+    <div style="margin-top: 12px">
+      <div style="font-size: 13px; color: var(--muted); margin-bottom: 6px">⭐ Star Top5</div>
+      <span id="st-stars-top" style="display: flex; gap: 10px; flex-wrap: wrap"></span>
+    </div>
+    <div class="hint" style="text-align: center; margin-top: 10px">
+      口径：仅统计 README 中真实嵌入本服务的仓库（每日自动复验）
     </div>
   </div>
 
@@ -345,10 +352,24 @@
   loadPacks();
   update();
 
-  // Live call stats (from the Worker's Durable Object counter)
+  // Live call stats (from /api/repos: verified-only counters + star boards)
+  function renderChips(container, items, valueFn) {
+    container.innerHTML = "";
+    (items || []).forEach(function (t) {
+      var a = document.createElement("a");
+      a.href = "https://github.com/" + t.repo;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = t.repo + " (" + valueFn(t) + ")";
+      a.style.cssText =
+        "background: var(--blue-soft); color: var(--blue); border-radius: 999px; padding: 4px 14px; font-size: 14px; font-weight: 600; text-decoration: none;";
+      container.appendChild(a);
+    });
+  }
+
   (function loadStats() {
     var panel = document.getElementById("stats-panel");
-    fetch("/api/stats")
+    fetch("/api/repos?limit=1")
       .then(function (r) {
         if (!r.ok) throw new Error("stats " + r.status);
         return r.json();
@@ -357,16 +378,11 @@
         document.getElementById("st-total").textContent =
           d.total >= 10000 ? (d.total / 1000).toFixed(1) + "k" : (d.total || 0).toLocaleString("en-US");
         document.getElementById("st-today").textContent = (d.today || 0).toLocaleString("en-US");
-        var top = document.getElementById("st-top");
-        (d.top || []).slice(0, 3).forEach(function (t) {
-          var a = document.createElement("a");
-          a.href = "https://github.com/" + t.repo;
-          a.target = "_blank";
-          a.rel = "noopener";
-          a.textContent = t.repo;
-          a.style.cssText =
-            "background: var(--blue-soft); color: var(--blue); border-radius: 999px; padding: 4px 14px; font-size: 14px; font-weight: 600; text-decoration: none;";
-          top.appendChild(a);
+        renderChips(document.getElementById("st-calls-top"), d.callsTop, function (t) {
+          return t.count + " 次";
+        });
+        renderChips(document.getElementById("st-stars-top"), d.starsTop, function (t) {
+          return "★ " + (t.stars != null ? t.stars.toLocaleString("en-US") : "–");
         });
         panel.hidden = false;
       })
