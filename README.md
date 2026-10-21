@@ -46,14 +46,18 @@ Fork 仓库 → 复制 `assets/packs/default` 改成你的套装 → 提 PR，**
 
 自部署、新增套装与本地开发见 [DEVELOPMENT.md](./DEVELOPMENT.md)。
 
-## 支持本项目
+## 💝 支持开发
 
-觉得大肥鱼可爱的话，欢迎请作者喝杯奶茶：
+大肥鱼会一直免费为大家服务。如果它让你的 README 多了一点乐趣，欢迎请作者喝杯咖啡，也是对持续维护的一份鼓励：
+
+<div align="center">
 
 <a href="https://ifdian.net/a/yschdxm"><img width="200" src="https://pic1.afdiancdn.com/static/img/welcome/button-sponsorme.png" alt="在爱发电支持我"></a>
 
-也可以直接扫码：
-
 | 支付宝 | 微信支付 |
-|---|---|
-| <img src="./.github/assets/alipay.png" alt="支付宝收款码" width="300"> | <img src="./.github/assets/wechat-pay.png" alt="微信支付收款码" width="300"> |
+|:---:|:---:|
+| <img src="./.github/assets/alipay.png" alt="支付宝收款码" width="280"> | <img src="./.github/assets/wechat-pay.png" alt="微信支付收款码" width="280"> |
+
+*不便扫码？也可以在 [爱发电](https://ifdian.net/a/yschdxm) 上支持，那里能留下你想看的功能建议。*
+
+</div>
