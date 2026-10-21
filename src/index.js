@@ -174,6 +174,24 @@ export class StatsDO {
         top,
       });
     }
+    if (url.pathname === "/full") {
+      const data = (await this.state.storage.get("s")) || {
+        total: 0,
+        days: {},
+        repos: {},
+      };
+      const byRepo = {};
+      for (const [key, c] of Object.entries(data.repos)) {
+        const repo = key.split("|")[0];
+        byRepo[repo] = (byRepo[repo] || 0) + c;
+      }
+      const todayStr = today();
+      const days = Object.entries(data.days)
+        .sort()
+        .slice(-7)
+        .map(([day, count]) => ({ day, count }));
+      return Response.json({ total: data.total, today: data.days[todayStr] || 0, days, byRepo });
+    }
     return new Response("not found", { status: 404 });
   }
 }
@@ -416,6 +434,81 @@ export default {
             "X-Route": "stats",
           },
         });
+      } catch {
+        return new Response(JSON.stringify({ error: "stats unavailable" }), {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Paginated verified-repos listing + top calls/stars boards (landing page)
+    if (url.pathname === "/api/repos") {
+      if (!env.STATS) {
+        return new Response(JSON.stringify({ error: "stats unavailable" }), {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      try {
+        let offset = parseInt(url.searchParams.get("offset") || "0", 10);
+        let limit = parseInt(url.searchParams.get("limit") || "20", 10);
+        if (!Number.isFinite(offset) || offset < 0) offset = 0;
+        if (!Number.isFinite(limit) || limit < 1) limit = 20;
+        if (limit > 100) limit = 100;
+
+        const stub = env.STATS.get(env.STATS.idFromName("global"));
+        const r = await stub.fetch("https://stats.internal/full");
+        const data = await r.json();
+        const arr = Object.entries(data.byRepo || {})
+          .map(([repo, count]) => ({ repo, count }))
+          .sort((a, b) => b.count - a.count);
+        const totalRepos = arr.length;
+
+        // Star enrichment for at most the top 40 by calls (API budget guard).
+        const top40 = arr.slice(0, 40);
+        const stars = await Promise.all(
+          top40.map((item) =>
+            getStarCount(item.repo, env).then(
+              (c) => [item.repo, c],
+              () => [item.repo, null],
+            ),
+          ),
+        );
+        const starMap = new Map(stars);
+        const withStars = arr.map((item) => ({
+          repo: item.repo,
+          count: item.count,
+          stars: starMap.has(item.repo) ? starMap.get(item.repo) : null,
+        }));
+
+        const callsTop = withStars.slice(0, 5);
+        const starsTop = withStars
+          .filter((x) => x.stars != null)
+          .sort((a, b) => b.stars - a.stars)
+          .slice(0, 5);
+        const repos = withStars.slice(offset, offset + limit);
+
+        return new Response(
+          JSON.stringify({
+            total: data.total,
+            today: data.today,
+            days: data.days,
+            callsTop,
+            starsTop,
+            repos,
+            offset,
+            limit,
+            totalRepos,
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "public, max-age=600",
+              "X-Route": "repos",
+            },
+          },
+        );
       } catch {
         return new Response(JSON.stringify({ error: "stats unavailable" }), {
           status: 503,
