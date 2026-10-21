@@ -88,6 +88,13 @@
   .steps { display: grid; gap: 10px; }
   .step { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; font-size: 14px; }
   .step b { color: var(--blue); }
+  .empty-hint { color: var(--muted); font-size: 14px; }
+  .users-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
+  .users-nav button {
+    border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 8px;
+    padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .users-nav button:disabled { opacity: 0.4; cursor: default; }
   footer { margin-top: 48px; text-align: center; color: var(--muted); font-size: 13px; }
   footer a { color: var(--blue); text-decoration: none; }
 </style>
@@ -161,6 +168,16 @@
     <div class="step"><b>1.</b> 选套装、贴仓库链接，复制上面的代码放进 README。</div>
     <div class="step"><b>2.</b> star 数与图片缓存约 5 分钟，跨档后通常 10 分钟内生效。</div>
     <div class="step"><b>3.</b> 想要自己的套装？Fork 仓库提 PR，合并即自动上线——见 <a href="https://github.com/yschdxm/whale-star/blob/main/CONTRIBUTING.md">贡献指南</a>。</div>
+  </div>
+
+  <h2>谁在用</h2>
+  <div class="panel" id="users-panel" hidden>
+    <div id="users-list" class="empty-hint">加载中…</div>
+    <div class="users-nav">
+      <button type="button" id="users-prev" disabled>上一页</button>
+      <span id="users-page-info" style="font-size: 13px; color: var(--muted)"></span>
+      <button type="button" id="users-next" disabled>下一页</button>
+    </div>
   </div>
 
   <footer>
@@ -351,6 +368,71 @@
 
   loadPacks();
   update();
+
+  // "谁在用" — paginated list of verified repos (from /api/repos)
+  var usersState = { offset: 0, limit: 20, totalRepos: 0 };
+
+  function loadUsers() {
+    fetch("/api/repos?offset=" + usersState.offset + "&limit=" + usersState.limit)
+      .then(function (r) {
+        if (!r.ok) throw new Error("users " + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        usersState.totalRepos = d.totalRepos || 0;
+        var list = document.getElementById("users-list");
+        list.className = "";
+        list.innerHTML = "";
+        if (!d.repos || !d.repos.length) {
+          list.className = "empty-hint";
+          list.textContent = "暂无已验证仓库";
+        } else {
+          d.repos.forEach(function (r) {
+            var a = document.createElement("a");
+            a.className = "pack";
+            a.href = "https://github.com/" + r.repo;
+            a.target = "_blank";
+            a.rel = "noopener";
+            var name = document.createElement("span");
+            name.className = "pname";
+            name.textContent = r.repo;
+            var meta = document.createElement("span");
+            meta.className = "ppath";
+            meta.textContent =
+              "★ " +
+              (r.stars != null ? r.stars.toLocaleString("en-US") : "–") +
+              " · 调用 " +
+              (r.count || 0).toLocaleString("en-US") +
+              " 次";
+            a.appendChild(name);
+            a.appendChild(meta);
+            list.appendChild(a);
+          });
+        }
+        var pageInfo = document.getElementById("users-page-info");
+        var from = usersState.totalRepos ? d.offset + 1 : 0;
+        var to = Math.min(d.offset + d.limit, usersState.totalRepos);
+        pageInfo.textContent = from + "-" + to + " / 共 " + usersState.totalRepos + " 个仓库";
+        document.getElementById("users-prev").disabled = d.offset <= 0;
+        document.getElementById("users-next").disabled = d.offset + d.limit >= usersState.totalRepos;
+        document.getElementById("users-panel").hidden = false;
+      })
+      .catch(function () {
+        /* panel stays hidden */
+      });
+  }
+
+  document.getElementById("users-prev").addEventListener("click", function () {
+    usersState.offset = Math.max(0, usersState.offset - usersState.limit);
+    loadUsers();
+  });
+  document.getElementById("users-next").addEventListener("click", function () {
+    if (usersState.offset + usersState.limit < usersState.totalRepos) {
+      usersState.offset += usersState.limit;
+      loadUsers();
+    }
+  });
+  loadUsers();
 
   // Live call stats (from /api/repos: verified-only counters + star boards)
   function renderChips(container, items, valueFn) {
