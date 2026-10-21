@@ -48,6 +48,6 @@ Fork 仓库 → 复制 `assets/packs/default` 改成你的套装 → 提 PR，**
 
 觉得大肥鱼可爱的话，欢迎请作者喝杯奶茶：
 
-[![爱发电 · 请我喝杯奶茶](https://img.shields.io/badge/%E7%88%B1%E5%8F%91%E7%94%B5-%E8%AF%B7%E6%88%91%E5%96%9D%E6%9D%AF%E5%A5%B6%E8%8C%B6-7e5fd9?logo=afdian&logoColor=white)](https://ifdian.net/a/yschdxm)
+<a href="https://ifdian.net/a/yschdxm"><img width="200" src="https://pic1.afdiancdn.com/static/img/welcome/button-sponsorme.png" alt="在爱发电支持我"></a>
 
 或直接访问：<https://ifdian.net/a/yschdxm>
