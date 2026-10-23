@@ -145,7 +145,7 @@
 
   <div class="snippet" style="margin-bottom: 20px">
     <div class="snippet-scroll">
-      <code id="code">&lt;img src="https://whale-star.whale-star.workers.dev/?repo=owner/repo&amp;pack=default" alt="star 大肥鱼" width="600" /&gt;</code>
+      <code id="code">&lt;a href="https://whale-star.whale-star.workers.dev/"&gt;&lt;img src="https://whale-star.whale-star.workers.dev/?repo=owner/repo&amp;pack=default" alt="star 大肥鱼" width="600" /&gt;&lt;/a&gt;</code>
     </div>
     <button type="button" id="copy">复制</button>
   </div>
@@ -210,7 +210,7 @@
     var pack = packSel.value || "default";
     var repo = parseRepo(repoInput.value) || "owner/repo";
     var url = ORIGIN + "/?repo=" + encodeURIComponent(repo) + "&pack=" + encodeURIComponent(pack);
-    codeEl.textContent = '<img src="' + url + '" alt="star 大肥鱼" width="600" />';
+    codeEl.textContent = '<a href="' + ORIGIN + '/"><img src="' + url + '" alt="star 大肥鱼" width="600" /></a>';
     var hasRepo = !!parseRepo(repoInput.value);
     repoHint.className = "hint" + (repoInput.value.trim() && !hasRepo ? " err" : "");
     repoHint.textContent = !repoInput.value.trim()

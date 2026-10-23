@@ -4,7 +4,7 @@
 
 **实时演示**（跟着本仓库的 star 数走，点 ⭐ 后约 10 分钟换图）：
 
-![star 大肥鱼](https://whale-star.whale-star.workers.dev/?repo=yschdxm/whale-star)
+[![star 大肥鱼](https://whale-star.whale-star.workers.dev/?repo=yschdxm/whale-star)](https://whale-star.whale-star.workers.dev/)
 
 ![调用统计](https://whale-star.whale-star.workers.dev/badge)
 
@@ -17,7 +17,7 @@
 在你的 README.md 里加一行：
 
 ```html
-<img src="https://whale-star.whale-star.workers.dev/?repo=你的用户名/仓库名" alt="star 大肥鱼" width="600" />
+<a href="https://whale-star.whale-star.workers.dev/"><img src="https://whale-star.whale-star.workers.dev/?repo=你的用户名/仓库名" alt="star 大肥鱼" width="600" /></a>
 ```
 
 | 参数 | 说明 |
